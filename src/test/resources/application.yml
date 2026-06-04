@@ -1,15 +1,10 @@
 spring:
-  application:
-    name: TikaSwell
   datasource:
-    url: jdbc:sqlite:${TIKASWELL_DB_PATH:./data/tikaswell.db}
+    url: jdbc:sqlite:file:tikaswell-test?mode=memory&cache=shared
     driver-class-name: org.sqlite.JDBC
     hikari:
       maximum-pool-size: 1
       connection-test-query: SELECT 1
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
 
 tikaswell:
   spot:

@@ -17,6 +17,10 @@ Useful variables:
 
 - `SERVER_PORT`
 - `TIKASWELL_DB_PATH` defaults to `./data/tikaswell.db` locally and `/app/data/tikaswell.db` in Compose
+- `TIKASWELL_SPOT_ID`
+- `TIKASWELL_SPOT_NAME`
+- `TIKASWELL_SPOT_LATITUDE`
+- `TIKASWELL_SPOT_LONGITUDE`
 - `OPEN_METEO_BASE_URL`
 
 ## Local Development
