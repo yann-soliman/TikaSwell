@@ -15,6 +15,7 @@ WORKDIR /app
 
 RUN addgroup -S tikaswell \
 	&& adduser -S tikaswell -G tikaswell \
+	&& apk add --no-cache curl \
 	&& mkdir -p /app/data \
 	&& chown -R tikaswell:tikaswell /app
 
@@ -22,5 +23,8 @@ COPY --from=build /workspace/build/libs/*.jar /app/app.jar
 
 USER tikaswell
 EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
+	CMD curl -fsS http://localhost:8080/ >/dev/null || exit 1
 
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
