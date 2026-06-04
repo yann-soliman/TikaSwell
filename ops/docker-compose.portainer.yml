@@ -1,0 +1,30 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8080
+      TIKASWELL_DB_PATH: /app/data/tikaswell.db
+      OPEN_METEO_BASE_URL: ${OPEN_METEO_BASE_URL:-https://marine-api.open-meteo.com}
+    volumes:
+      - tikaswell-data:/app/data
+    networks:
+      - traefik
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK:-proxy}
+      - traefik.http.routers.tikaswell.rule=Host(`${TIKASWELL_HOST}`)
+      - traefik.http.routers.tikaswell.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.tikaswell.tls=true
+      - traefik.http.routers.tikaswell.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}
+      - traefik.http.services.tikaswell.loadbalancer.server.port=8080
+
+volumes:
+  tikaswell-data:
+
+networks:
+  traefik:
+    name: ${TRAEFIK_NETWORK:-proxy}
+    external: true
