@@ -2,8 +2,10 @@ services:
   app:
     build:
       context: ..
+      dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
-      - "${SERVER_PORT:-8080}:8080"
+      - "${TIKASWELL_HTTP_PORT:-8080}:8080"
     environment:
       SERVER_PORT: ${SERVER_PORT:-8080}
       TIKASWELL_DB_PATH: ${TIKASWELL_DB_PATH:-/app/data/tikaswell.db}
