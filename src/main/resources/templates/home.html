@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,10 +10,10 @@
   <main class="shell">
     <section class="masthead" aria-labelledby="page-title">
       <div>
-        <p class="eyebrow">Surf log</p>
+        <p class="eyebrow">Carnet de surf</p>
         <h1 id="page-title" th:text="${spot.name}">Initial spot</h1>
       </div>
-      <dl class="spot-meta" aria-label="Spot coordinates">
+      <dl class="spot-meta" aria-label="Coordonnées du spot">
         <div>
           <dt>Latitude</dt>
           <dd th:text="${#numbers.formatDecimal(spot.latitude, 1, 4)}">0.0000</dd>
@@ -25,54 +25,54 @@
       </dl>
     </section>
 
-    <p class="flash" th:if="${message}" th:text="${message}">Session saved</p>
+    <p class="flash" th:if="${message}" th:text="${message}">Session enregistrée</p>
 
     <div class="workspace">
       <section class="panel entry-panel" aria-labelledby="entry-title">
-        <h2 id="entry-title">Log a session</h2>
+        <h2 id="entry-title">Ajouter une session</h2>
         <form class="session-form" th:action="@{/sessions}" th:object="${form}" method="post">
           <label>
             <span>Date</span>
             <input type="date" th:field="*{date}">
-            <strong th:if="${#fields.hasErrors('date')}" th:errors="*{date}">Date error</strong>
+            <strong th:if="${#fields.hasErrors('date')}" th:errors="*{date}">Erreur de date</strong>
           </label>
 
           <div class="field-grid">
             <label>
-              <span>Start</span>
+              <span>Début</span>
               <input type="time" th:field="*{startTime}">
-              <strong th:if="${#fields.hasErrors('startTime')}" th:errors="*{startTime}">Start error</strong>
+              <strong th:if="${#fields.hasErrors('startTime')}" th:errors="*{startTime}">Erreur de début</strong>
             </label>
             <label>
-              <span>End</span>
+              <span>Fin</span>
               <input type="time" th:field="*{endTime}">
-              <strong th:if="${#fields.hasErrors('endTime')}" th:errors="*{endTime}">End error</strong>
+              <strong th:if="${#fields.hasErrors('endTime')}" th:errors="*{endTime}">Erreur de fin</strong>
             </label>
           </div>
 
           <label>
-            <span>Rating</span>
+            <span>Note</span>
             <input type="number" min="0" max="10" step="1" th:field="*{rating}" placeholder="0-10">
-            <strong th:if="${#fields.hasErrors('rating')}" th:errors="*{rating}">Rating error</strong>
+            <strong th:if="${#fields.hasErrors('rating')}" th:errors="*{rating}">Erreur de note</strong>
           </label>
 
           <label>
             <span>Notes</span>
-            <textarea rows="5" th:field="*{notes}" placeholder="Wind feel, crowd, tide memory..."></textarea>
+            <textarea rows="5" th:field="*{notes}" placeholder="Vent ressenti, fréquentation, marée, bancs de sable..."></textarea>
           </label>
 
-          <button type="submit">Save session</button>
+          <button type="submit">Enregistrer la session</button>
         </form>
       </section>
 
       <section class="panel history-panel" aria-labelledby="history-title">
         <div class="panel-heading">
-          <h2 id="history-title">Session history</h2>
-          <span th:text="${#lists.size(sessions)} + ' logged'">0 logged</span>
+          <h2 id="history-title">Historique des sessions</h2>
+          <span th:text="${#lists.size(sessions)} + ' enregistrée(s)'">0 enregistrée</span>
         </div>
 
         <div class="empty-state" th:if="${#lists.isEmpty(sessions)}">
-          <p>No sessions logged yet.</p>
+          <p>Aucune session enregistrée pour le moment.</p>
         </div>
 
         <ol class="session-list" th:if="${!#lists.isEmpty(sessions)}">

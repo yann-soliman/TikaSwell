@@ -7,6 +7,6 @@ data class TimeWindow(
 	val endsAt: Instant,
 ) {
 	init {
-		require(startsAt.isBefore(endsAt)) { "Window start must be before window end" }
+		require(startsAt.isBefore(endsAt)) { "Le début de fenêtre doit être avant la fin" }
 	}
 }

@@ -9,8 +9,8 @@ data class CurrentScore(
 	val computedAt: Instant,
 ) {
 	init {
-		score?.let { require(it in 0.0..10.0) { "Score must be between 0 and 10" } }
-		require(confidence in 0.0..1.0) { "Confidence must be between 0 and 1" }
+		score?.let { require(it in 0.0..10.0) { "Le score doit être compris entre 0 et 10" } }
+		require(confidence in 0.0..1.0) { "La confiance doit être comprise entre 0 et 1" }
 	}
 }
 
@@ -20,6 +20,6 @@ data class ScoreContribution(
 	val similarity: Double,
 ) {
 	init {
-		require(similarity in 0.0..1.0) { "Similarity must be between 0 and 1" }
+		require(similarity in 0.0..1.0) { "La similarité doit être comprise entre 0 et 1" }
 	}
 }

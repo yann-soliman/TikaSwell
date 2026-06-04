@@ -42,7 +42,7 @@ class HomeController(
 		redirectAttributes: RedirectAttributes,
 	): String {
 		if (form.startTime != null && form.endTime != null && !form.startTime.isBefore(form.endTime)) {
-			bindingResult.rejectValue("endTime", "session.endTime.afterStart", "End time must be after start time")
+			bindingResult.rejectValue("endTime", "session.endTime.afterStart", "L'heure de fin doit être après l'heure de début")
 		}
 
 		if (bindingResult.hasErrors()) {
@@ -64,7 +64,7 @@ class HomeController(
 			),
 		)
 
-		redirectAttributes.addFlashAttribute("message", "Session saved")
+		redirectAttributes.addFlashAttribute("message", "Session enregistrée")
 		return "redirect:/"
 	}
 
@@ -81,15 +81,15 @@ class HomeController(
 }
 
 data class SurfSessionForm(
-	@field:NotNull(message = "Date is required")
+	@field:NotNull(message = "La date est obligatoire")
 	val date: LocalDate?,
-	@field:NotNull(message = "Start time is required")
+	@field:NotNull(message = "L'heure de début est obligatoire")
 	val startTime: LocalTime?,
-	@field:NotNull(message = "End time is required")
+	@field:NotNull(message = "L'heure de fin est obligatoire")
 	val endTime: LocalTime?,
-	@field:NotNull(message = "Rating is required")
-	@field:Min(value = 0, message = "Rating must be at least 0")
-	@field:Max(value = 10, message = "Rating must be at most 10")
+	@field:NotNull(message = "La note est obligatoire")
+	@field:Min(value = 0, message = "La note doit être au moins 0")
+	@field:Max(value = 10, message = "La note doit être au plus 10")
 	val rating: Int?,
 	val notes: String?,
 ) {

@@ -14,10 +14,10 @@ data class ConditionSnapshot(
 	val providerName: String,
 ) {
 	init {
-		require(windSpeedKmh >= 0.0) { "Wind speed must be positive or zero" }
-		windGustKmh?.let { require(it >= 0.0) { "Wind gust must be positive or zero" } }
-		waveHeightMeters?.let { require(it >= 0.0) { "Wave height must be positive or zero" } }
-		wavePeriodSeconds?.let { require(it >= 0.0) { "Wave period must be positive or zero" } }
-		require(providerName.isNotBlank()) { "Provider name is required" }
+		require(windSpeedKmh >= 0.0) { "La vitesse du vent doit être positive ou nulle" }
+		windGustKmh?.let { require(it >= 0.0) { "La rafale doit être positive ou nulle" } }
+		waveHeightMeters?.let { require(it >= 0.0) { "La hauteur de vague doit être positive ou nulle" } }
+		wavePeriodSeconds?.let { require(it >= 0.0) { "La période de vague doit être positive ou nulle" } }
+		require(providerName.isNotBlank()) { "Le nom du fournisseur est obligatoire" }
 	}
 }

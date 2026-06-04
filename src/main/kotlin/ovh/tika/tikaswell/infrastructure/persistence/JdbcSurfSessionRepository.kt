@@ -18,7 +18,7 @@ class JdbcSurfSessionRepository(
 	private val jdbcTemplate: NamedParameterJdbcTemplate,
 ) : SurfSessionRepository {
 	override fun save(session: SurfSession): SurfSession {
-		require(session.id == null) { "Updating surf sessions is not implemented yet" }
+		require(session.id == null) { "La modification des sessions n'est pas encore implémentée" }
 
 		val keyHolder = GeneratedKeyHolder()
 		jdbcTemplate.update(

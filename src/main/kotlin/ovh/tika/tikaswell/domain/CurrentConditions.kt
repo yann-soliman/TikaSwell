@@ -8,6 +8,6 @@ data class CurrentConditions(
 	val snapshot: ConditionSnapshot,
 ) {
 	init {
-		require(snapshot.spotId == spot.id) { "Current condition snapshot must belong to the spot" }
+		require(snapshot.spotId == spot.id) { "Le snapshot de conditions doit appartenir au spot" }
 	}
 }

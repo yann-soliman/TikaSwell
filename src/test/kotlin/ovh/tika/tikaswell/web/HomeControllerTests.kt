@@ -25,6 +25,7 @@ class HomeControllerTests {
 
 	@BeforeEach
 	fun cleanDatabase() {
+		jdbcTemplate.update("DELETE FROM condition_snapshots")
 		jdbcTemplate.update("DELETE FROM surf_sessions")
 	}
 
@@ -33,8 +34,8 @@ class HomeControllerTests {
 		mockMvc.perform(get("/"))
 			.andExpect(status().isOk)
 			.andExpect(content().string(containsString("Initial spot")))
-			.andExpect(content().string(containsString("Log a session")))
-			.andExpect(content().string(containsString("No sessions logged yet.")))
+			.andExpect(content().string(containsString("Ajouter une session")))
+			.andExpect(content().string(containsString("Aucune session enregistrée pour le moment.")))
 	}
 
 	@Test
@@ -48,7 +49,7 @@ class HomeControllerTests {
 				.param("notes", "Too short"),
 		)
 			.andExpect(status().isOk)
-			.andExpect(content().string(containsString("End time must be after start time")))
+			.andExpect(content().string(containsString("L&#39;heure de fin doit être après l&#39;heure de début")))
 	}
 
 	@Test
