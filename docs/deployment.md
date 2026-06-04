@@ -16,7 +16,7 @@ SQLite is stored on a persistent volume mounted into the app container.
 Useful variables:
 
 - `SERVER_PORT`
-- `TIKASWELL_DB_PATH`
+- `TIKASWELL_DB_PATH` defaults to `./data/tikaswell.db` locally and `/app/data/tikaswell.db` in Compose
 - `OPEN_METEO_BASE_URL`
 
 ## Local Development

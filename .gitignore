@@ -38,3 +38,7 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+### Local runtime data ###
+data/*
+!data/.gitkeep

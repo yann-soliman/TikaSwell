@@ -1,0 +1,2 @@
+-- Baseline migration for the MVP schema.
+-- Business tables are introduced by focused migrations as features land.

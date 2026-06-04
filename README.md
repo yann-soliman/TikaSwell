@@ -40,3 +40,4 @@ Once Java 21 is available:
 ```
 
 The app stores its SQLite database under `./data/tikaswell.db` by default.
+Override the path with `TIKASWELL_DB_PATH` when running in another environment.
