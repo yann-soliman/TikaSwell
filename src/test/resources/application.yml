@@ -12,3 +12,6 @@ tikaswell:
     name: Initial spot
     latitude: 47.2465
     longitude: -2.1668
+  open-meteo:
+    weather-base-url: http://localhost/weather-test
+    marine-base-url: http://localhost/marine-test

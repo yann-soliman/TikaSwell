@@ -13,7 +13,8 @@ services:
       TIKASWELL_SPOT_NAME: ${TIKASWELL_SPOT_NAME:-Initial spot}
       TIKASWELL_SPOT_LATITUDE: ${TIKASWELL_SPOT_LATITUDE:-47.2465}
       TIKASWELL_SPOT_LONGITUDE: ${TIKASWELL_SPOT_LONGITUDE:--2.1668}
-      OPEN_METEO_BASE_URL: ${OPEN_METEO_BASE_URL:-https://marine-api.open-meteo.com}
+      OPEN_METEO_WEATHER_BASE_URL: ${OPEN_METEO_WEATHER_BASE_URL:-https://api.open-meteo.com}
+      OPEN_METEO_MARINE_BASE_URL: ${OPEN_METEO_MARINE_BASE_URL:-https://marine-api.open-meteo.com}
     volumes:
       - tikaswell-data:/app/data
 
