@@ -29,7 +29,22 @@
 
     <section class="dashboard" aria-label="Conditions et score">
       <article class="panel score-panel">
-        <p class="eyebrow">Score estimé</p>
+        <div class="score-heading">
+          <p class="eyebrow">Score estimé</p>
+          <details class="help-popover">
+            <summary aria-label="Comment le score est calculé">?</summary>
+            <div>
+              <strong>Comment lire ce score ?</strong>
+              <p>
+                Le score compare les conditions actuelles aux sessions déjà notées.
+                Les sessions les plus proches pèsent davantage dans l'estimation.
+              </p>
+              <p>
+                La confiance monte quand plusieurs sessions historiques ressemblent aux conditions du moment.
+              </p>
+            </div>
+          </details>
+        </div>
         <div class="score-value" th:if="${currentScore != null}" th:classappend="${!currentScore.hasScore} ? 'score-value--empty'">
           <strong th:text="${currentScore.score}">Pas assez d'historique</strong>
           <span th:if="${currentScore.hasScore}">/10</span>
@@ -48,28 +63,28 @@
         <p class="provider-error" th:if="${conditionsError != null}">
           Conditions indisponibles pour le moment.
         </p>
-        <dl class="conditions-grid" th:if="${currentConditions != null}">
-          <div>
+        <dl class="conditions-strip" th:if="${currentConditions != null}">
+          <div class="condition-tile condition-tile--primary">
             <dt>Vent</dt>
             <dd th:text="${currentConditions.windSpeed}">0 km/h</dd>
           </div>
-          <div>
+          <div class="condition-tile condition-tile--primary">
             <dt>Rafales</dt>
             <dd th:text="${currentConditions.windGust}">n/d</dd>
           </div>
-          <div>
+          <div class="condition-tile">
             <dt>Direction vent</dt>
             <dd th:text="${currentConditions.windDirection}">n/d</dd>
           </div>
-          <div>
+          <div class="condition-tile condition-tile--primary">
             <dt>Vagues</dt>
             <dd th:text="${currentConditions.waveHeight}">n/d</dd>
           </div>
-          <div>
+          <div class="condition-tile condition-tile--primary">
             <dt>Période</dt>
             <dd th:text="${currentConditions.wavePeriod}">n/d</dd>
           </div>
-          <div>
+          <div class="condition-tile">
             <dt>Direction vagues</dt>
             <dd th:text="${currentConditions.waveDirection}">n/d</dd>
           </div>

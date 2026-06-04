@@ -48,6 +48,7 @@ class HomeControllerTests {
 			.andExpect(content().string(containsString("Initial spot")))
 			.andExpect(content().string(containsString("Conditions actuelles")))
 			.andExpect(content().string(containsString("18,0 km/h")))
+			.andExpect(content().string(containsString("Comment lire ce score ?")))
 			.andExpect(content().string(containsString("Ajouter une session")))
 			.andExpect(content().string(containsString("Aucune session enregistrée pour le moment.")))
 	}

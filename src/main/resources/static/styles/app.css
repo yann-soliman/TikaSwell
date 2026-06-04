@@ -187,6 +187,55 @@ button:hover {
 .score-panel {
   display: grid;
   align-content: center;
+  position: relative;
+}
+
+.score-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.help-popover {
+  position: relative;
+}
+
+.help-popover summary {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #fffdf8;
+  color: var(--accent-dark);
+  cursor: pointer;
+  font-weight: 900;
+  list-style: none;
+}
+
+.help-popover summary::-webkit-details-marker {
+  display: none;
+}
+
+.help-popover div {
+  position: absolute;
+  right: 0;
+  z-index: 3;
+  width: min(320px, calc(100vw - 48px));
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fffdf8;
+  box-shadow: var(--shadow);
+}
+
+.help-popover p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 .score-value {
@@ -211,30 +260,36 @@ button:hover {
   font-size: clamp(1.6rem, 4vw, 2.6rem);
 }
 
-.conditions-grid {
+.conditions-strip {
   display: grid;
-  grid-template-columns: repeat(3, minmax(120px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+  gap: 8px;
   margin: 0;
 }
 
-.conditions-grid div {
-  min-height: 76px;
-  padding: 12px;
+.condition-tile {
+  min-height: 70px;
+  padding: 10px;
   border: 1px solid var(--line);
   background: #fffdf8;
 }
 
-.conditions-grid dt {
-  color: var(--muted);
-  font-size: 0.74rem;
-  font-weight: 800;
+.condition-tile--primary {
+  border-color: rgba(15, 118, 110, 0.34);
 }
 
-.conditions-grid dd {
-  margin: 8px 0 0;
-  font-size: 1.25rem;
+.conditions-strip dt {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.conditions-strip dd {
+  margin: 7px 0 0;
+  font-size: clamp(1.05rem, 2.4vw, 1.35rem);
   font-weight: 900;
+  line-height: 1.05;
 }
 
 .provider-error,
@@ -359,8 +414,11 @@ button:hover {
 
   .field-grid,
   .spot-meta,
-  .conditions-grid,
   .contributor-list li {
     grid-template-columns: 1fr;
+  }
+
+  .conditions-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
