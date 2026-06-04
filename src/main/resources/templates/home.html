@@ -27,6 +27,56 @@
 
     <p class="flash" th:if="${message}" th:text="${message}">Session enregistrée</p>
 
+    <section class="dashboard" aria-label="Conditions et score">
+      <article class="panel score-panel">
+        <p class="eyebrow">Score estimé</p>
+        <div class="score-value" th:if="${currentScore != null}" th:classappend="${!currentScore.hasScore} ? 'score-value--empty'">
+          <strong th:text="${currentScore.score}">Pas assez d'historique</strong>
+          <span th:if="${currentScore.hasScore}">/10</span>
+        </div>
+        <div class="score-value score-value--empty" th:if="${currentScore == null}">
+          <strong>Indisponible</strong>
+        </div>
+        <p class="score-detail" th:if="${currentScore != null}" th:text="'Confiance : ' + ${currentScore.confidence}">Confiance : 0 %</p>
+      </article>
+
+      <article class="panel conditions-panel">
+        <div class="panel-heading">
+          <h2>Conditions actuelles</h2>
+          <span th:if="${currentConditions != null}" th:text="${currentConditions.providerName}">Open-Meteo</span>
+        </div>
+        <p class="provider-error" th:if="${conditionsError != null}">
+          Conditions indisponibles pour le moment.
+        </p>
+        <dl class="conditions-grid" th:if="${currentConditions != null}">
+          <div>
+            <dt>Vent</dt>
+            <dd th:text="${currentConditions.windSpeed}">0 km/h</dd>
+          </div>
+          <div>
+            <dt>Rafales</dt>
+            <dd th:text="${currentConditions.windGust}">n/d</dd>
+          </div>
+          <div>
+            <dt>Direction vent</dt>
+            <dd th:text="${currentConditions.windDirection}">n/d</dd>
+          </div>
+          <div>
+            <dt>Vagues</dt>
+            <dd th:text="${currentConditions.waveHeight}">n/d</dd>
+          </div>
+          <div>
+            <dt>Période</dt>
+            <dd th:text="${currentConditions.wavePeriod}">n/d</dd>
+          </div>
+          <div>
+            <dt>Direction vagues</dt>
+            <dd th:text="${currentConditions.waveDirection}">n/d</dd>
+          </div>
+        </dl>
+      </article>
+    </section>
+
     <div class="workspace">
       <section class="panel entry-panel" aria-labelledby="entry-title">
         <h2 id="entry-title">Ajouter une session</h2>
@@ -92,6 +142,23 @@
         </ol>
       </section>
     </div>
+
+    <section class="panel contributors-panel" aria-labelledby="contributors-title">
+      <div class="panel-heading">
+        <h2 id="contributors-title">Sessions qui influencent le score</h2>
+        <span th:text="${#lists.size(scoreContributors)} + ' contribution(s)'">0 contribution</span>
+      </div>
+      <p class="empty-copy" th:if="${#lists.isEmpty(scoreContributors)}">
+        Le score expliquera ses références dès que des sessions auront des conditions enregistrées.
+      </p>
+      <ol class="contributor-list" th:if="${!#lists.isEmpty(scoreContributors)}">
+        <li th:each="contributor : ${scoreContributors}">
+          <strong th:text="${contributor.rating} + '/10'">8/10</strong>
+          <span th:text="${contributor.date} + ' · ' + ${contributor.timeWindow}">04/06/2026 · 09:00 - 11:00</span>
+          <em th:text="'Similarité ' + ${contributor.similarity}">Similarité 80 %</em>
+        </li>
+      </ol>
+    </section>
   </main>
 </body>
 </html>

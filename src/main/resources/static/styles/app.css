@@ -110,6 +110,13 @@ h2 {
   font-weight: 700;
 }
 
+.dashboard {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(320px, 1.2fr);
+  gap: 24px;
+  padding-top: 24px;
+}
+
 .workspace {
   display: grid;
   grid-template-columns: minmax(280px, 380px) 1fr;
@@ -175,6 +182,65 @@ button {
 
 button:hover {
   background: var(--accent-dark);
+}
+
+.score-panel {
+  display: grid;
+  align-content: center;
+}
+
+.score-value {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.score-value strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.8rem, 7vw, 5.6rem);
+  line-height: 0.95;
+}
+
+.score-value span,
+.score-detail {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.score-value--empty strong {
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+}
+
+.conditions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.conditions-grid div {
+  min-height: 76px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: #fffdf8;
+}
+
+.conditions-grid dt {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.conditions-grid dd {
+  margin: 8px 0 0;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.provider-error,
+.empty-copy {
+  margin-bottom: 0;
+  color: var(--muted);
 }
 
 .panel-heading {
@@ -243,8 +309,45 @@ button:hover {
   line-height: 1.5;
 }
 
+.contributors-panel {
+  margin-top: 24px;
+}
+
+.contributor-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contributor-list li {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: #fffdf8;
+}
+
+.contributor-list strong {
+  color: var(--accent-dark);
+}
+
+.contributor-list span {
+  font-weight: 800;
+}
+
+.contributor-list em {
+  color: var(--muted);
+  font-style: normal;
+  font-weight: 800;
+}
+
 @media (max-width: 760px) {
   .masthead,
+  .dashboard,
   .workspace {
     grid-template-columns: 1fr;
   }
@@ -255,7 +358,9 @@ button:hover {
   }
 
   .field-grid,
-  .spot-meta {
+  .spot-meta,
+  .conditions-grid,
+  .contributor-list li {
     grid-template-columns: 1fr;
   }
 }

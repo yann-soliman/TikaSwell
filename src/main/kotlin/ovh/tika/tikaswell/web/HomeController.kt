@@ -7,7 +7,12 @@ import jakarta.validation.constraints.NotNull
 import ovh.tika.tikaswell.application.session.CreateSurfSessionCommand
 import ovh.tika.tikaswell.application.session.SurfSessionService
 import ovh.tika.tikaswell.application.spot.SpotProvider
+import ovh.tika.tikaswell.application.scoring.SurfScoreService
+import ovh.tika.tikaswell.domain.ConditionSnapshot
+import ovh.tika.tikaswell.domain.ConditionsProvider
+import ovh.tika.tikaswell.domain.CurrentScore
 import ovh.tika.tikaswell.domain.Rating
+import ovh.tika.tikaswell.domain.ScoreContribution
 import ovh.tika.tikaswell.domain.SurfSession
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
@@ -25,6 +30,8 @@ import java.time.format.DateTimeFormatter
 class HomeController(
 	private val spotProvider: SpotProvider,
 	private val surfSessionService: SurfSessionService,
+	private val conditionsProvider: ConditionsProvider,
+	private val surfScoreService: SurfScoreService,
 ) {
 	private val zoneId = ZoneId.of("Europe/Paris")
 
@@ -56,7 +63,7 @@ class HomeController(
 
 		surfSessionService.create(
 			CreateSurfSessionCommand(
-				spotId = spot.id,
+				spot = spot,
 				startsAt = startsAt,
 				endsAt = endsAt,
 				rating = Rating(form.rating!!),
@@ -71,12 +78,30 @@ class HomeController(
 	private fun populateHomeModel(model: Model, form: SurfSessionForm) {
 		val spot = spotProvider.initialSpot()
 		val sessions = surfSessionService.listForInitialSpot(spot.id)
+		val currentConditions = runCatching { conditionsProvider.fetchCurrentConditions(spot) }
+		val currentScore = currentConditions.getOrNull()?.let { surfScoreService.score(it) }
 
 		if (!model.containsAttribute("form")) {
 			model.addAttribute("form", form)
 		}
 		model.addAttribute("spot", spot)
 		model.addAttribute("sessions", sessions.map { SurfSessionView.from(it, zoneId) })
+		model.addAttribute("currentConditions", currentConditions.getOrNull()?.snapshot?.let(CurrentConditionsView::from))
+		model.addAttribute("conditionsError", currentConditions.exceptionOrNull()?.message)
+		model.addAttribute("currentScore", currentScore?.let(CurrentScoreView::from))
+		model.addAttribute("scoreContributors", scoreContributors(currentScore, sessions))
+	}
+
+	private fun scoreContributors(score: CurrentScore?, sessions: List<SurfSession>): List<ScoreContributionView> {
+		if (score == null) {
+			return emptyList()
+		}
+		val sessionsById = sessions.mapNotNull { session -> session.id?.let { it to session } }.toMap()
+		return score.contributors.mapNotNull { contribution ->
+			sessionsById[contribution.sessionId]?.let { session ->
+				ScoreContributionView.from(contribution, session, zoneId)
+			}
+		}
 	}
 }
 
@@ -128,3 +153,67 @@ data class SurfSessionView(
 		}
 	}
 }
+
+data class CurrentConditionsView(
+	val windSpeed: String,
+	val windGust: String,
+	val windDirection: String,
+	val waveHeight: String,
+	val wavePeriod: String,
+	val waveDirection: String,
+	val providerName: String,
+) {
+	companion object {
+		fun from(snapshot: ConditionSnapshot): CurrentConditionsView =
+			CurrentConditionsView(
+				windSpeed = "${snapshot.windSpeedKmh.format(1)} km/h",
+				windGust = snapshot.windGustKmh?.let { "${it.format(1)} km/h" } ?: "n/d",
+				windDirection = snapshot.windDirection?.let { "${it.degrees}°" } ?: "n/d",
+				waveHeight = snapshot.waveHeightMeters?.let { "${it.format(1)} m" } ?: "n/d",
+				wavePeriod = snapshot.wavePeriodSeconds?.let { "${it.format(1)} s" } ?: "n/d",
+				waveDirection = snapshot.waveDirection?.let { "${it.degrees}°" } ?: "n/d",
+				providerName = snapshot.providerName,
+			)
+	}
+}
+
+data class CurrentScoreView(
+	val score: String,
+	val confidence: String,
+	val hasScore: Boolean,
+) {
+	companion object {
+		fun from(score: CurrentScore): CurrentScoreView =
+			CurrentScoreView(
+				score = score.score?.format(1) ?: "Pas assez d'historique",
+				confidence = "${(score.confidence * 100).format(0)} %",
+				hasScore = score.score != null,
+			)
+	}
+}
+
+data class ScoreContributionView(
+	val date: String,
+	val timeWindow: String,
+	val rating: Int,
+	val similarity: String,
+) {
+	companion object {
+		private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+		private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+		fun from(contribution: ScoreContribution, session: SurfSession, zoneId: ZoneId): ScoreContributionView {
+			val startsAt = session.startsAt.atZone(zoneId)
+			val endsAt = session.endsAt.atZone(zoneId)
+			return ScoreContributionView(
+				date = startsAt.format(dateFormatter),
+				timeWindow = "${startsAt.format(timeFormatter)} - ${endsAt.format(timeFormatter)}",
+				rating = contribution.rating.value,
+				similarity = "${(contribution.similarity * 100).format(0)} %",
+			)
+		}
+	}
+}
+
+private fun Double.format(decimals: Int): String =
+	"%.${decimals}f".format(java.util.Locale.FRANCE, this)

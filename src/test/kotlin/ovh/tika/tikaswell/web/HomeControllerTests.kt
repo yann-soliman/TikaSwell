@@ -1,11 +1,21 @@
 package ovh.tika.tikaswell.web
 
+import ovh.tika.tikaswell.domain.ConditionSnapshot
+import ovh.tika.tikaswell.domain.ConditionsProvider
+import ovh.tika.tikaswell.domain.CurrentConditions
+import ovh.tika.tikaswell.domain.Direction
+import ovh.tika.tikaswell.domain.Spot
+import ovh.tika.tikaswell.domain.TimeWindow
 import org.hamcrest.Matchers.containsString
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Import
+import org.springframework.context.annotation.Primary
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
@@ -13,9 +23,11 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.time.Instant
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Import(HomeControllerTests.TestConditionsProviderConfig::class)
 class HomeControllerTests {
 	@Autowired
 	private lateinit var mockMvc: MockMvc
@@ -34,6 +46,8 @@ class HomeControllerTests {
 		mockMvc.perform(get("/"))
 			.andExpect(status().isOk)
 			.andExpect(content().string(containsString("Initial spot")))
+			.andExpect(content().string(containsString("Conditions actuelles")))
+			.andExpect(content().string(containsString("18,0 km/h")))
 			.andExpect(content().string(containsString("Ajouter une session")))
 			.andExpect(content().string(containsString("Aucune session enregistrée pour le moment.")))
 	}
@@ -68,6 +82,44 @@ class HomeControllerTests {
 		mockMvc.perform(get("/"))
 			.andExpect(status().isOk)
 			.andExpect(content().string(containsString("Clean morning lines")))
+			.andExpect(content().string(containsString("Score estimé")))
+			.andExpect(content().string(containsString("Sessions qui influencent le score")))
 			.andExpect(content().string(containsString("8")))
+	}
+
+	@TestConfiguration
+	class TestConditionsProviderConfig {
+		@Bean
+		@Primary
+		fun testConditionsProvider(): ConditionsProvider =
+			object : ConditionsProvider {
+				override val name: String = "Provider de test"
+
+				override fun fetchCurrentConditions(spot: Spot): CurrentConditions =
+					CurrentConditions(
+						spot = spot,
+						fetchedAt = Instant.parse("2026-06-04T10:00:00Z"),
+						snapshot = snapshot(spot),
+					)
+
+				override fun fetchHistoricalConditions(spot: Spot, window: TimeWindow): List<ConditionSnapshot> =
+					listOf(snapshot(spot))
+
+				override fun fetchForecastConditions(spot: Spot, window: TimeWindow): List<ConditionSnapshot> =
+					listOf(snapshot(spot))
+
+				private fun snapshot(spot: Spot): ConditionSnapshot =
+					ConditionSnapshot(
+						spotId = spot.id,
+						timestamp = Instant.parse("2026-06-04T10:00:00Z"),
+						windSpeedKmh = 18.0,
+						windGustKmh = 25.0,
+						windDirection = Direction(260),
+						waveHeightMeters = 1.1,
+						wavePeriodSeconds = 8.0,
+						waveDirection = Direction(245),
+						providerName = name,
+					)
+			}
 	}
 }
