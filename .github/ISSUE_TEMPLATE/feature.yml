@@ -1,0 +1,27 @@
+name: Feature
+description: Product or implementation feature
+title: "[Feature] "
+labels:
+  - feature
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why is this needed?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What should be done?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: How do we know it is done?
+    validations:
+      required: true

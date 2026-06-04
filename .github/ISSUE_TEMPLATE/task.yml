@@ -1,0 +1,24 @@
+name: Task
+description: Technical implementation task
+title: "[Task] "
+labels:
+  - task
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Technical Notes
+    validations:
+      required: false
+  - type: textarea
+    id: done
+    attributes:
+      label: Done When
+    validations:
+      required: true

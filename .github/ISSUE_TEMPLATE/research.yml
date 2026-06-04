@@ -1,0 +1,25 @@
+name: Research
+description: Research or design exploration
+title: "[Research] "
+labels:
+  - research
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Research Question
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+    validations:
+      required: false
+  - type: textarea
+    id: output
+    attributes:
+      label: Expected Output
+      description: Decision memo, recommendation, prototype, etc.
+    validations:
+      required: true
