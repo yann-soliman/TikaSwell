@@ -86,3 +86,27 @@ similarity = 1 - weighted_distance
 The app keeps the 5 most similar historical sessions, then estimates the current score as a similarity-weighted average of their ratings. Confidence increases when several similar historical sessions are available.
 
 This is intentionally not machine learning. The goal is to keep the score inspectable and easy to adjust after real sessions reveal better local heuristics.
+
+### Short Example
+
+A past session rated `8/10` was logged with average conditions close to the current conditions:
+
+| Data | Current | Past session |
+| --- | ---: | ---: |
+| Wind | 24 km/h | 20 km/h |
+| Gusts | 34 km/h | 30 km/h |
+| Wind direction | 280° | 270° |
+| Waves | 1.7 m | 1.5 m |
+| Period | 9 s | 10 s |
+
+The app computes a similarity for that session, for example `92 %`.
+
+It does the same comparison with every historical session:
+
+| Session | Rating | Similarity |
+| --- | ---: | ---: |
+| A | 8/10 | 92 % |
+| B | 5/10 | 60 % |
+| C | 9/10 | 85 % |
+
+The final score is a similarity-weighted average of the ratings. Here, sessions A and C count more than B, so the estimated score will be close to `8/10`.
