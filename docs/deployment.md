@@ -13,16 +13,26 @@ SQLite est stocké dans un volume persistant monté dans le conteneur applicatif
 
 ## Variables d'environnement
 
-Variables utiles :
+Cette section est la référence pour les variables à saisir à la main dans Portainer.
+Ne jamais committer de vraie clé API dans le dépôt, même dans un exemple.
 
-- `SERVER_PORT`
-- `TIKASWELL_DB_PATH` defaults to `./data/tikaswell.db` locally and `/app/data/tikaswell.db` in Compose
-- `TIKASWELL_SPOT_ID`
-- `TIKASWELL_SPOT_NAME`
-- `TIKASWELL_SPOT_LATITUDE`
-- `TIKASWELL_SPOT_LONGITUDE`
-- `OPEN_METEO_WEATHER_BASE_URL`
-- `OPEN_METEO_MARINE_BASE_URL`
+| Variable | Obligatoire | Valeur recommandée | Usage |
+| --- | --- | --- | --- |
+| `TIKASWELL_HTTP_PORT` | Non | `8080` | Port exposé par Docker sur le LXC |
+| `SERVER_PORT` | Non | `8080` | Port HTTP interne de Spring Boot |
+| `TIKASWELL_DB_PATH` | Non | `/app/data/tikaswell.db` | Chemin SQLite dans le conteneur |
+| `TIKASWELL_SPOT_ID` | Oui | `saint-brevin-ermitage` | Identifiant stable du spot |
+| `TIKASWELL_SPOT_NAME` | Oui | `Plage de l'Ermitage` | Nom affiché dans l'IHM |
+| `TIKASWELL_SPOT_LATITUDE` | Oui | `47.20744` | Latitude du spot |
+| `TIKASWELL_SPOT_LONGITUDE` | Oui | `-2.15987` | Longitude du spot |
+| `OPEN_METEO_WEATHER_BASE_URL` | Non | `https://api.open-meteo.com` | API météo Open-Meteo |
+| `OPEN_METEO_MARINE_BASE_URL` | Non | `https://marine-api.open-meteo.com` | API marine Open-Meteo |
+| `STORMGLASS_BASE_URL` | Non | `https://api.stormglass.io` | API Stormglass |
+| `STORMGLASS_API_KEY` | Bientôt | valeur privée saisie dans Portainer | Clé API Stormglass, jamais dans Git |
+
+`STORMGLASS_API_KEY` est déjà prévue dans la configuration mais ne sera utilisée qu'à partir
+de l'intégration marée. Elle doit rester vide si tu n'as pas encore de clé, ou être saisie
+uniquement dans les variables d'environnement de Portainer si tu en as une.
 
 ## Développement local
 
@@ -52,7 +62,12 @@ TIKASWELL_SPOT_LATITUDE=47.20744
 TIKASWELL_SPOT_LONGITUDE=-2.15987
 OPEN_METEO_WEATHER_BASE_URL=https://api.open-meteo.com
 OPEN_METEO_MARINE_BASE_URL=https://marine-api.open-meteo.com
+STORMGLASS_BASE_URL=https://api.stormglass.io
+STORMGLASS_API_KEY=
 ```
+
+Pour `STORMGLASS_API_KEY`, remplacer la valeur vide directement dans Portainer par la vraie
+clé privée. Ne pas la mettre dans le compose, le README, une issue GitHub, un commit ou un log.
 
 Après déploiement, tester :
 

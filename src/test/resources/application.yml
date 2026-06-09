@@ -15,3 +15,6 @@ tikaswell:
   open-meteo:
     weather-base-url: http://localhost/weather-test
     marine-base-url: http://localhost/marine-test
+  stormglass:
+    base-url: http://localhost/stormglass-test
+    api-key:

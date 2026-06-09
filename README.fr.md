@@ -50,6 +50,10 @@ Le spot initial se configure avec :
 - `TIKASWELL_SPOT_LATITUDE`
 - `TIKASWELL_SPOT_LONGITUDE`
 
+La liste complète des variables d'environnement, y compris les secrets provider comme
+`STORMGLASS_API_KEY`, est documentée dans [Déploiement](docs/deployment.md). Les vraies clés
+API doivent être saisies dans l'environnement d'exécution, jamais dans Git.
+
 ## Calcul De Similarité
 
 TikaSwell utilise une approche simple et explicable de type plus proches voisins.

@@ -15,6 +15,8 @@ services:
       TIKASWELL_SPOT_LONGITUDE: ${TIKASWELL_SPOT_LONGITUDE:--2.1668}
       OPEN_METEO_WEATHER_BASE_URL: ${OPEN_METEO_WEATHER_BASE_URL:-https://api.open-meteo.com}
       OPEN_METEO_MARINE_BASE_URL: ${OPEN_METEO_MARINE_BASE_URL:-https://marine-api.open-meteo.com}
+      STORMGLASS_BASE_URL: ${STORMGLASS_BASE_URL:-https://api.stormglass.io}
+      STORMGLASS_API_KEY: ${STORMGLASS_API_KEY:-}
     volumes:
       - tikaswell-data:/app/data
 
