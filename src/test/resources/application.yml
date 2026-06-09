@@ -18,3 +18,5 @@ tikaswell:
   stormglass:
     base-url: http://localhost/stormglass-test
     api-key:
+  tide:
+    max-provider-calls-per-day: 6

@@ -17,6 +17,7 @@ services:
       OPEN_METEO_MARINE_BASE_URL: ${OPEN_METEO_MARINE_BASE_URL:-https://marine-api.open-meteo.com}
       STORMGLASS_BASE_URL: ${STORMGLASS_BASE_URL:-https://api.stormglass.io}
       STORMGLASS_API_KEY: ${STORMGLASS_API_KEY:-}
+      TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY: ${TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY:-6}
     volumes:
       - tikaswell-data:/app/data
 

@@ -29,6 +29,7 @@ Ne jamais committer de vraie clé API dans le dépôt, même dans un exemple.
 | `OPEN_METEO_MARINE_BASE_URL` | Non | `https://marine-api.open-meteo.com` | API marine Open-Meteo |
 | `STORMGLASS_BASE_URL` | Non | `https://api.stormglass.io` | API Stormglass |
 | `STORMGLASS_API_KEY` | Bientôt | valeur privée saisie dans Portainer | Clé API Stormglass, jamais dans Git |
+| `TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY` | Non | `6` | Quota applicatif quotidien pour les appels marée |
 
 `STORMGLASS_API_KEY` est déjà prévue dans la configuration mais ne sera utilisée qu'à partir
 de l'intégration marée. Elle doit rester vide si tu n'as pas encore de clé, ou être saisie
@@ -68,6 +69,7 @@ OPEN_METEO_WEATHER_BASE_URL=https://api.open-meteo.com
 OPEN_METEO_MARINE_BASE_URL=https://marine-api.open-meteo.com
 STORMGLASS_BASE_URL=https://api.stormglass.io
 STORMGLASS_API_KEY=
+TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY=6
 ```
 
 Pour `STORMGLASS_API_KEY`, remplacer la valeur vide directement dans Portainer par la vraie

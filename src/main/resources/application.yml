@@ -23,3 +23,5 @@ tikaswell:
   stormglass:
     base-url: ${STORMGLASS_BASE_URL:https://api.stormglass.io}
     api-key: ${STORMGLASS_API_KEY:}
+  tide:
+    max-provider-calls-per-day: ${TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY:6}
