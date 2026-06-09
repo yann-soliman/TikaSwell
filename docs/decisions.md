@@ -33,3 +33,14 @@
 - single spot
 - simple form-based session entry
 - explainable empirical score
+
+## 2026-06-09
+
+### Tide Provider
+
+- Stormglass is retained as the MVP tide provider.
+- Open-Meteo remains the main weather/marine provider for wind, waves, swell, and wind-wave conditions.
+- Stormglass is used only to enrich the tide context.
+- Tide calls must be cached in SQLite because the free plan quota is very low.
+- Provider API keys must be injected through environment variables and must not be logged or committed.
+- Buoy integrations remain out of scope for now.

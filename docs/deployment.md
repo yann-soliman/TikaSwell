@@ -34,6 +34,10 @@ Ne jamais committer de vraie clé API dans le dépôt, même dans un exemple.
 de l'intégration marée. Elle doit rester vide si tu n'as pas encore de clé, ou être saisie
 uniquement dans les variables d'environnement de Portainer si tu en as une.
 
+Stormglass est réservé au contexte de marée. Open-Meteo reste la source météo/marine principale.
+Le plan gratuit Stormglass est très limité, donc l'intégration devra obligatoirement passer par
+un cache SQLite avant d'être affichée dans le dashboard.
+
 ## Développement local
 
 Lancer :
