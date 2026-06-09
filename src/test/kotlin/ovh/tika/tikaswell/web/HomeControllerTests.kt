@@ -45,10 +45,12 @@ class HomeControllerTests {
 	fun `home page renders configured spot and empty session history`() {
 		mockMvc.perform(get("/"))
 			.andExpect(status().isOk)
+			.andExpect(content().string(containsString("href=\"/favicon.svg\"")))
 			.andExpect(content().string(containsString("Initial spot")))
 			.andExpect(content().string(containsString("Conditions actuelles")))
+			.andExpect(content().string(containsString("Donnée du 04/06/2026 à 12:00")))
 			.andExpect(content().string(containsString("18,0 km/h")))
-			.andExpect(content().string(containsString("Période moyenne")))
+			.andExpect(content().string(containsString("Rafales / période")))
 			.andExpect(content().string(containsString("Période pic")))
 			.andExpect(content().string(containsString("Houle")))
 			.andExpect(content().string(containsString("Mer du vent")))
