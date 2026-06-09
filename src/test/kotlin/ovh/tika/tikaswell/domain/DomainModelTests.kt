@@ -2,7 +2,9 @@ package ovh.tika.tikaswell.domain
 
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
 
 class DomainModelTests {
 	private val spotId = SpotId("initial")
@@ -83,6 +85,45 @@ class DomainModelTests {
 				sessionId = SurfSessionId(1),
 				rating = Rating(8),
 				similarity = -0.1,
+			)
+		}
+	}
+
+	@Test
+	fun `tide snapshot validates canonical tide values`() {
+		assertFailsWith<IllegalArgumentException> {
+			TideSnapshot(
+				spotId = spotId,
+				timestamp = Instant.parse("2026-06-04T10:00:00Z"),
+				waterHeightMeters = 3.4,
+				phase = TidePhase.RISING,
+				previousHighTide = null,
+				previousLowTide = null,
+				nextHighTide = null,
+				nextLowTide = null,
+				timeSincePreviousHighTide = Duration.ofHours(-1),
+				timeSincePreviousLowTide = null,
+				timeUntilNextHighTide = null,
+				timeUntilNextLowTide = null,
+				coefficient = 80.0,
+				providerName = "Stormglass",
+			)
+		}
+
+		assertFailsWith<IllegalArgumentException> {
+			TideDayCache(
+				id = null,
+				spotId = spotId,
+				date = LocalDate.parse("2026-06-04"),
+				providerName = "Stormglass",
+				fetchedAt = Instant.parse("2026-06-04T00:00:00Z"),
+				stationName = "Saint-Nazaire",
+				stationDistanceKilometers = -1.0,
+				coefficient = null,
+				unavailableReason = null,
+				unavailableMessage = null,
+				points = emptyList(),
+				events = emptyList(),
 			)
 		}
 	}
