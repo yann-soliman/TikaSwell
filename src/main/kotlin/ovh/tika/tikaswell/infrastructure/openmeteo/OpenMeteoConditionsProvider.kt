@@ -61,7 +61,16 @@ class OpenMeteoConditionsProvider(
 				windDirection = weatherPoint.windDirection,
 				waveHeightMeters = marinePoint?.waveHeightMeters,
 				wavePeriodSeconds = marinePoint?.wavePeriodSeconds,
+				wavePeakPeriodSeconds = marinePoint?.wavePeakPeriodSeconds,
 				waveDirection = marinePoint?.waveDirection,
+				windWaveHeightMeters = marinePoint?.windWaveHeightMeters,
+				windWavePeriodSeconds = marinePoint?.windWavePeriodSeconds,
+				windWavePeakPeriodSeconds = marinePoint?.windWavePeakPeriodSeconds,
+				windWaveDirection = marinePoint?.windWaveDirection,
+				swellWaveHeightMeters = marinePoint?.swellWaveHeightMeters,
+				swellWavePeriodSeconds = marinePoint?.swellWavePeriodSeconds,
+				swellWavePeakPeriodSeconds = marinePoint?.swellWavePeakPeriodSeconds,
+				swellWaveDirection = marinePoint?.swellWaveDirection,
 				providerName = name,
 			)
 		}
@@ -91,7 +100,7 @@ class OpenMeteoConditionsProvider(
 			.path("/v1/marine")
 			.queryParam("latitude", spot.latitude)
 			.queryParam("longitude", spot.longitude)
-			.queryParam("hourly", "wave_height,wave_period,wave_direction")
+			.queryParam("hourly", MARINE_HOURLY_VARIABLES)
 			.queryParam("timezone", "UTC")
 			.queryParam("start_date", window.startsAt.utcDate())
 			.queryParam("end_date", window.endsAt.utcDate())
@@ -122,7 +131,16 @@ internal data class MarinePoint(
 	val timestamp: Instant,
 	val waveHeightMeters: Double?,
 	val wavePeriodSeconds: Double?,
+	val wavePeakPeriodSeconds: Double?,
 	val waveDirection: Direction?,
+	val windWaveHeightMeters: Double?,
+	val windWavePeriodSeconds: Double?,
+	val windWavePeakPeriodSeconds: Double?,
+	val windWaveDirection: Direction?,
+	val swellWaveHeightMeters: Double?,
+	val swellWavePeriodSeconds: Double?,
+	val swellWavePeakPeriodSeconds: Double?,
+	val swellWaveDirection: Direction?,
 )
 
 internal data class OpenMeteoHourlyResponse(
@@ -141,8 +159,26 @@ internal data class OpenMeteoHourly(
 	val waveHeight: List<Double?> = emptyList(),
 	@JsonProperty("wave_period")
 	val wavePeriod: List<Double?> = emptyList(),
+	@JsonProperty("wave_peak_period")
+	val wavePeakPeriod: List<Double?> = emptyList(),
 	@JsonProperty("wave_direction")
 	val waveDirection: List<Int?> = emptyList(),
+	@JsonProperty("wind_wave_height")
+	val windWaveHeight: List<Double?> = emptyList(),
+	@JsonProperty("wind_wave_period")
+	val windWavePeriod: List<Double?> = emptyList(),
+	@JsonProperty("wind_wave_peak_period")
+	val windWavePeakPeriod: List<Double?> = emptyList(),
+	@JsonProperty("wind_wave_direction")
+	val windWaveDirection: List<Int?> = emptyList(),
+	@JsonProperty("swell_wave_height")
+	val swellWaveHeight: List<Double?> = emptyList(),
+	@JsonProperty("swell_wave_period")
+	val swellWavePeriod: List<Double?> = emptyList(),
+	@JsonProperty("swell_wave_peak_period")
+	val swellWavePeakPeriod: List<Double?> = emptyList(),
+	@JsonProperty("swell_wave_direction")
+	val swellWaveDirection: List<Int?> = emptyList(),
 ) {
 	fun toWeatherPoints(): List<WeatherPoint> =
 		time.mapIndexedNotNull { index, timestamp ->
@@ -161,7 +197,16 @@ internal data class OpenMeteoHourly(
 				timestamp = timestamp.toInstant(ZoneOffset.UTC),
 				waveHeightMeters = waveHeight.valueAt(index),
 				wavePeriodSeconds = wavePeriod.valueAt(index),
+				wavePeakPeriodSeconds = wavePeakPeriod.valueAt(index),
 				waveDirection = waveDirection.valueAt(index)?.let(::Direction),
+				windWaveHeightMeters = windWaveHeight.valueAt(index),
+				windWavePeriodSeconds = windWavePeriod.valueAt(index),
+				windWavePeakPeriodSeconds = windWavePeakPeriod.valueAt(index),
+				windWaveDirection = windWaveDirection.valueAt(index)?.let(::Direction),
+				swellWaveHeightMeters = swellWaveHeight.valueAt(index),
+				swellWavePeriodSeconds = swellWavePeriod.valueAt(index),
+				swellWavePeakPeriodSeconds = swellWavePeakPeriod.valueAt(index),
+				swellWaveDirection = swellWaveDirection.valueAt(index)?.let(::Direction),
 			)
 		}
 
@@ -171,3 +216,8 @@ internal data class OpenMeteoHourly(
 
 private fun Instant.utcDate(): LocalDate =
 	atOffset(ZoneOffset.UTC).toLocalDate()
+
+private const val MARINE_HOURLY_VARIABLES =
+	"wave_height,wave_period,wave_peak_period,wave_direction," +
+		"wind_wave_height,wind_wave_period,wind_wave_peak_period,wind_wave_direction," +
+		"swell_wave_height,swell_wave_period,swell_wave_peak_period,swell_wave_direction"

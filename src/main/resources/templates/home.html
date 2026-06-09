@@ -63,32 +63,91 @@
         <p class="provider-error" th:if="${conditionsError != null}">
           Conditions indisponibles pour le moment.
         </p>
-        <dl class="conditions-strip" th:if="${currentConditions != null}">
-          <div class="condition-tile condition-tile--primary">
-            <dt>Vent</dt>
-            <dd th:text="${currentConditions.windSpeed}">0 km/h</dd>
-          </div>
-          <div class="condition-tile condition-tile--primary">
-            <dt>Rafales</dt>
-            <dd th:text="${currentConditions.windGust}">n/d</dd>
-          </div>
-          <div class="condition-tile">
-            <dt>Direction vent</dt>
-            <dd th:text="${currentConditions.windDirection}">n/d</dd>
-          </div>
-          <div class="condition-tile condition-tile--primary">
-            <dt>Vagues</dt>
-            <dd th:text="${currentConditions.waveHeight}">n/d</dd>
-          </div>
-          <div class="condition-tile condition-tile--primary">
-            <dt>Période</dt>
-            <dd th:text="${currentConditions.wavePeriod}">n/d</dd>
-          </div>
-          <div class="condition-tile">
-            <dt>Direction vagues</dt>
-            <dd th:text="${currentConditions.waveDirection}">n/d</dd>
-          </div>
-        </dl>
+        <div class="conditions-grid" th:if="${currentConditions != null}">
+          <section class="condition-group condition-group--wind" aria-labelledby="wind-conditions-title">
+            <h3 id="wind-conditions-title">Vent</h3>
+            <dl>
+              <div>
+                <dt>Moyen</dt>
+                <dd th:text="${currentConditions.windSpeed}">0 km/h</dd>
+              </div>
+              <div>
+                <dt>Rafales</dt>
+                <dd th:text="${currentConditions.windGust}">n/d</dd>
+              </div>
+              <div>
+                <dt>Direction</dt>
+                <dd th:text="${currentConditions.windDirection}">n/d</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="condition-group condition-group--main" aria-labelledby="wave-conditions-title">
+            <h3 id="wave-conditions-title">Vagues</h3>
+            <dl>
+              <div>
+                <dt>Hauteur</dt>
+                <dd th:text="${currentConditions.waveHeight}">n/d</dd>
+              </div>
+              <div>
+                <dt>Période</dt>
+                <dd th:text="${currentConditions.wavePeriod}">n/d</dd>
+              </div>
+              <div>
+                <dt>Période pic</dt>
+                <dd th:text="${currentConditions.wavePeakPeriod}">n/d</dd>
+              </div>
+              <div>
+                <dt>Direction</dt>
+                <dd th:text="${currentConditions.waveDirection}">n/d</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="condition-group" aria-labelledby="swell-conditions-title">
+            <h3 id="swell-conditions-title">Houle</h3>
+            <dl>
+              <div>
+                <dt>Hauteur</dt>
+                <dd th:text="${currentConditions.swellWaveHeight}">n/d</dd>
+              </div>
+              <div>
+                <dt>Période</dt>
+                <dd th:text="${currentConditions.swellWavePeriod}">n/d</dd>
+              </div>
+              <div>
+                <dt>Période pic</dt>
+                <dd th:text="${currentConditions.swellWavePeakPeriod}">n/d</dd>
+              </div>
+              <div>
+                <dt>Direction</dt>
+                <dd th:text="${currentConditions.swellWaveDirection}">n/d</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="condition-group" aria-labelledby="wind-wave-conditions-title">
+            <h3 id="wind-wave-conditions-title">Mer du vent</h3>
+            <dl>
+              <div>
+                <dt>Hauteur</dt>
+                <dd th:text="${currentConditions.windWaveHeight}">n/d</dd>
+              </div>
+              <div>
+                <dt>Période</dt>
+                <dd th:text="${currentConditions.windWavePeriod}">n/d</dd>
+              </div>
+              <div>
+                <dt>Période pic</dt>
+                <dd th:text="${currentConditions.windWavePeakPeriod}">n/d</dd>
+              </div>
+              <div>
+                <dt>Direction</dt>
+                <dd th:text="${currentConditions.windWaveDirection}">n/d</dd>
+              </div>
+            </dl>
+          </section>
+        </div>
       </article>
     </section>
 

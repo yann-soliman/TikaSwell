@@ -55,7 +55,16 @@ class OpenMeteoConditionsProviderTests {
 		assertThat(snapshots[0].windDirection?.degrees).isEqualTo(260)
 		assertThat(snapshots[0].waveHeightMeters).isEqualTo(1.2)
 		assertThat(snapshots[0].wavePeriodSeconds).isEqualTo(8.0)
+		assertThat(snapshots[0].wavePeakPeriodSeconds).isEqualTo(11.0)
 		assertThat(snapshots[0].waveDirection?.degrees).isEqualTo(245)
+		assertThat(snapshots[0].swellWaveHeightMeters).isEqualTo(1.0)
+		assertThat(snapshots[0].swellWavePeriodSeconds).isEqualTo(10.0)
+		assertThat(snapshots[0].swellWavePeakPeriodSeconds).isEqualTo(12.0)
+		assertThat(snapshots[0].swellWaveDirection?.degrees).isEqualTo(250)
+		assertThat(snapshots[0].windWaveHeightMeters).isEqualTo(0.4)
+		assertThat(snapshots[0].windWavePeriodSeconds).isEqualTo(4.0)
+		assertThat(snapshots[0].windWavePeakPeriodSeconds).isEqualTo(5.0)
+		assertThat(snapshots[0].windWaveDirection?.degrees).isEqualTo(275)
 		assertThat(snapshots[0].providerName).isEqualTo("Open-Meteo")
 	}
 
@@ -111,7 +120,16 @@ class OpenMeteoConditionsProviderTests {
 			    "time": ["2026-06-04T09:00", "2026-06-04T12:00"],
 			    "wave_height": [1.2, 1.4],
 			    "wave_period": [8.0, 9.0],
-			    "wave_direction": [245, 250]
+			    "wave_peak_period": [11.0, 12.0],
+			    "wave_direction": [245, 250],
+			    "swell_wave_height": [1.0, 1.1],
+			    "swell_wave_period": [10.0, 10.5],
+			    "swell_wave_peak_period": [12.0, 13.0],
+			    "swell_wave_direction": [250, 252],
+			    "wind_wave_height": [0.4, 0.5],
+			    "wind_wave_period": [4.0, 4.5],
+			    "wind_wave_peak_period": [5.0, 5.5],
+			    "wind_wave_direction": [275, 280]
 			  }
 			}
 		""".trimIndent()

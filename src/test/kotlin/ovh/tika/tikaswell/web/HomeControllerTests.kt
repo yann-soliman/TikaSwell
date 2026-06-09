@@ -48,6 +48,9 @@ class HomeControllerTests {
 			.andExpect(content().string(containsString("Initial spot")))
 			.andExpect(content().string(containsString("Conditions actuelles")))
 			.andExpect(content().string(containsString("18,0 km/h")))
+			.andExpect(content().string(containsString("Période pic")))
+			.andExpect(content().string(containsString("Houle")))
+			.andExpect(content().string(containsString("Mer du vent")))
 			.andExpect(content().string(containsString("Comment lire ce score ?")))
 			.andExpect(content().string(containsString("Ajouter une session")))
 			.andExpect(content().string(containsString("Aucune session enregistrée pour le moment.")))
@@ -118,7 +121,16 @@ class HomeControllerTests {
 						windDirection = Direction(260),
 						waveHeightMeters = 1.1,
 						wavePeriodSeconds = 8.0,
+						wavePeakPeriodSeconds = 11.0,
 						waveDirection = Direction(245),
+						windWaveHeightMeters = 0.4,
+						windWavePeriodSeconds = 4.5,
+						windWavePeakPeriodSeconds = 5.5,
+						windWaveDirection = Direction(270),
+						swellWaveHeightMeters = 1.0,
+						swellWavePeriodSeconds = 10.0,
+						swellWavePeakPeriodSeconds = 12.0,
+						swellWaveDirection = Direction(250),
 						providerName = name,
 					)
 			}

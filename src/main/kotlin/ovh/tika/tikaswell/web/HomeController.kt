@@ -160,7 +160,16 @@ data class CurrentConditionsView(
 	val windDirection: String,
 	val waveHeight: String,
 	val wavePeriod: String,
+	val wavePeakPeriod: String,
 	val waveDirection: String,
+	val swellWaveHeight: String,
+	val swellWavePeriod: String,
+	val swellWavePeakPeriod: String,
+	val swellWaveDirection: String,
+	val windWaveHeight: String,
+	val windWavePeriod: String,
+	val windWavePeakPeriod: String,
+	val windWaveDirection: String,
 	val providerName: String,
 ) {
 	companion object {
@@ -171,7 +180,16 @@ data class CurrentConditionsView(
 				windDirection = snapshot.windDirection?.let { "${it.degrees}°" } ?: "n/d",
 				waveHeight = snapshot.waveHeightMeters?.let { "${it.format(1)} m" } ?: "n/d",
 				wavePeriod = snapshot.wavePeriodSeconds?.let { "${it.format(1)} s" } ?: "n/d",
+				wavePeakPeriod = snapshot.wavePeakPeriodSeconds?.let { "${it.format(1)} s" } ?: "n/d",
 				waveDirection = snapshot.waveDirection?.let { "${it.degrees}°" } ?: "n/d",
+				swellWaveHeight = snapshot.swellWaveHeightMeters?.let { "${it.format(1)} m" } ?: "n/d",
+				swellWavePeriod = snapshot.swellWavePeriodSeconds?.let { "${it.format(1)} s" } ?: "n/d",
+				swellWavePeakPeriod = snapshot.swellWavePeakPeriodSeconds?.let { "${it.format(1)} s" } ?: "n/d",
+				swellWaveDirection = snapshot.swellWaveDirection?.let { "${it.degrees}°" } ?: "n/d",
+				windWaveHeight = snapshot.windWaveHeightMeters?.let { "${it.format(1)} m" } ?: "n/d",
+				windWavePeriod = snapshot.windWavePeriodSeconds?.let { "${it.format(1)} s" } ?: "n/d",
+				windWavePeakPeriod = snapshot.windWavePeakPeriodSeconds?.let { "${it.format(1)} s" } ?: "n/d",
+				windWaveDirection = snapshot.windWaveDirection?.let { "${it.degrees}°" } ?: "n/d",
 				providerName = snapshot.providerName,
 			)
 	}

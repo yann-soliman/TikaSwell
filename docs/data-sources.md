@@ -21,10 +21,17 @@ Provider data should be mapped into an internal model with fields such as:
 - wind direction
 - wave height
 - wave period
+- wave peak period
 - wave direction
+- swell wave height, period, peak period, and direction when available
+- wind wave height, period, peak period, and direction when available
 - provider name
 
 This model is the input used by the application and scoring layers.
+
+The UI should keep the Open-Meteo marine values explicit: the mean wave period, the peak
+period, the swell component, and the wind-wave component are related but not equivalent.
+This distinction is important when comparing the application with tools such as Windguru.
 
 ## Provider Abstraction
 
@@ -43,3 +50,5 @@ Later candidates may include:
 - Windguru if a stable and legitimate integration path exists
 - tide-specific providers
 - manually imported spot knowledge
+
+Buoy integrations are intentionally left aside for now.

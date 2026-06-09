@@ -56,6 +56,7 @@ class DomainModelTests {
 				windDirection = Direction(270),
 				waveHeightMeters = 1.2,
 				wavePeriodSeconds = 8.0,
+				wavePeakPeriodSeconds = -1.0,
 				waveDirection = Direction(250),
 				providerName = "Open-Meteo",
 			)

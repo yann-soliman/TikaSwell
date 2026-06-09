@@ -46,7 +46,16 @@ class JdbcConditionSnapshotRepositoryTests {
 			windDirection = Direction(260),
 			waveHeightMeters = 1.1,
 			wavePeriodSeconds = 8.5,
+			wavePeakPeriodSeconds = 11.0,
 			waveDirection = Direction(245),
+			windWaveHeightMeters = 0.4,
+			windWavePeriodSeconds = 4.5,
+			windWavePeakPeriodSeconds = 5.5,
+			windWaveDirection = Direction(270),
+			swellWaveHeightMeters = 1.0,
+			swellWavePeriodSeconds = 10.0,
+			swellWavePeakPeriodSeconds = 12.0,
+			swellWaveDirection = Direction(250),
 			providerName = "Open-Meteo",
 		)
 
@@ -56,6 +65,7 @@ class JdbcConditionSnapshotRepositoryTests {
 		assertThat(savedSnapshot.sessionId).isEqualTo(sessionId)
 		assertThat(snapshotRepository.findBySessionId(sessionId)).containsExactly(savedSnapshot)
 		assertThat(snapshotRepository.findBySpotId(spotId)).containsExactly(savedSnapshot)
+		assertThat(snapshotRepository.findBySessionId(sessionId).single().snapshot.swellWavePeakPeriodSeconds).isEqualTo(12.0)
 	}
 
 	@Test
@@ -70,7 +80,16 @@ class JdbcConditionSnapshotRepositoryTests {
 			windDirection = null,
 			waveHeightMeters = null,
 			wavePeriodSeconds = null,
+			wavePeakPeriodSeconds = null,
 			waveDirection = null,
+			windWaveHeightMeters = null,
+			windWavePeriodSeconds = null,
+			windWavePeakPeriodSeconds = null,
+			windWaveDirection = null,
+			swellWaveHeightMeters = null,
+			swellWavePeriodSeconds = null,
+			swellWavePeakPeriodSeconds = null,
+			swellWaveDirection = null,
 			providerName = "Open-Meteo",
 		)
 
@@ -81,7 +100,16 @@ class JdbcConditionSnapshotRepositoryTests {
 		assertThat(persisted.windDirection).isNull()
 		assertThat(persisted.waveHeightMeters).isNull()
 		assertThat(persisted.wavePeriodSeconds).isNull()
+		assertThat(persisted.wavePeakPeriodSeconds).isNull()
 		assertThat(persisted.waveDirection).isNull()
+		assertThat(persisted.windWaveHeightMeters).isNull()
+		assertThat(persisted.windWavePeriodSeconds).isNull()
+		assertThat(persisted.windWavePeakPeriodSeconds).isNull()
+		assertThat(persisted.windWaveDirection).isNull()
+		assertThat(persisted.swellWaveHeightMeters).isNull()
+		assertThat(persisted.swellWavePeriodSeconds).isNull()
+		assertThat(persisted.swellWavePeakPeriodSeconds).isNull()
+		assertThat(persisted.swellWaveDirection).isNull()
 	}
 
 	private fun savedSession(): SurfSession =
