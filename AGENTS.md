@@ -59,7 +59,7 @@ Before making non-trivial changes, read these files in order:
 
 - Open-Meteo is the only provider for MVP.
 - Future providers must plug through a provider interface and map into a canonical internal model.
-- Do not depend on Windguru in the MVP implementation.
+- Do not depend on third-party forecast tools in the MVP implementation.
 
 ## Scoring Rules
 
@@ -73,6 +73,6 @@ Before making non-trivial changes, read these files in order:
 - Multi-user support
 - Multi-spot support
 - Email or Gotify alerts
-- Windguru integration
+- Third-party forecast tool integrations
 - Mobile app
 - Public API for third parties

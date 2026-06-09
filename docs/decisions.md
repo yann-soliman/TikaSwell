@@ -12,7 +12,7 @@
 ### Data Source
 
 - Open-Meteo retained as the only MVP provider
-- Windguru not retained for the MVP implementation
+- Third-party forecast tools are not retained for the MVP implementation
 
 ### Persistence
 

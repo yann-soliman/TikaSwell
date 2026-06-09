@@ -20,7 +20,7 @@
 - Multi-spot support
 - Email alerts
 - Gotify alerts
-- Windguru integration
+- Third-party forecast tool integrations
 - Public API
 - Mobile app
 - Advanced machine learning

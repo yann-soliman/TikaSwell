@@ -31,7 +31,7 @@ This model is the input used by the application and scoring layers.
 
 The UI should keep the Open-Meteo marine values explicit: the mean wave period, the peak
 period, the swell component, and the wind-wave component are related but not equivalent.
-This distinction is important when comparing the application with tools such as Windguru.
+This distinction is important when comparing the application with external forecast tools.
 
 ## Provider Abstraction
 
@@ -47,7 +47,7 @@ That keeps future providers isolated from the rest of the codebase.
 
 Later candidates may include:
 
-- Windguru if a stable and legitimate integration path exists
+- additional forecast providers if a stable and legitimate integration path exists
 - tide-specific providers
 - manually imported spot knowledge
 

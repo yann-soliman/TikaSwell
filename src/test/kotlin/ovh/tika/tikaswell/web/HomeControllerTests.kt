@@ -48,6 +48,7 @@ class HomeControllerTests {
 			.andExpect(content().string(containsString("Initial spot")))
 			.andExpect(content().string(containsString("Conditions actuelles")))
 			.andExpect(content().string(containsString("18,0 km/h")))
+			.andExpect(content().string(containsString("Période moyenne")))
 			.andExpect(content().string(containsString("Période pic")))
 			.andExpect(content().string(containsString("Houle")))
 			.andExpect(content().string(containsString("Mer du vent")))
