@@ -1,6 +1,7 @@
 package ovh.tika.tikaswell.application.tide
 
 import ovh.tika.tikaswell.domain.ProviderCallLog
+import ovh.tika.tikaswell.domain.ProviderCallPurpose
 import ovh.tika.tikaswell.domain.Spot
 import ovh.tika.tikaswell.domain.SpotId
 import ovh.tika.tikaswell.domain.TideDayCache
@@ -75,6 +76,20 @@ class TideServiceTests {
 		assertThat(tide.unavailableReason).isNull()
 		assertThat(cacheRepository.findBySpotIdAndDateAndProvider(spot.id, date, provider.name)).isNotNull()
 		assertThat(calls.calls).hasSize(2)
+	}
+
+	@Test
+	fun `service logs prefetch purpose when preloading a missing tide day`() {
+		val calls = InMemoryProviderCallLogRepository()
+		val provider = FakeTideProvider(requiredCalls = 2)
+		val service = service(provider = provider, callRepository = calls)
+
+		service.prefetchTideDay(spot, date)
+
+		assertThat(calls.calls).hasSize(2)
+		assertThat(calls.calls).allSatisfy { call ->
+			assertThat(call.purpose).isEqualTo(ProviderCallPurpose.TIDE_CACHE_PREFETCH)
+		}
 	}
 
 	private fun service(

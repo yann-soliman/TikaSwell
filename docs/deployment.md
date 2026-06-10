@@ -28,16 +28,23 @@ Ne jamais committer de vraie clé API dans le dépôt, même dans un exemple.
 | `OPEN_METEO_WEATHER_BASE_URL` | Non | `https://api.open-meteo.com` | API météo Open-Meteo |
 | `OPEN_METEO_MARINE_BASE_URL` | Non | `https://marine-api.open-meteo.com` | API marine Open-Meteo |
 | `STORMGLASS_BASE_URL` | Non | `https://api.stormglass.io` | API Stormglass |
-| `STORMGLASS_API_KEY` | Bientôt | valeur privée saisie dans Portainer | Clé API Stormglass, jamais dans Git |
+| `STORMGLASS_API_KEY` | Oui pour la marée | valeur privée saisie dans Portainer | Clé API Stormglass, jamais dans Git |
 | `TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY` | Non | `6` | Quota applicatif quotidien pour les appels marée |
+| `TIKASWELL_TIDE_PREFETCH_ENABLED` | Non | `true` | Active le préchargement automatique du cache marée |
+| `TIKASWELL_TIDE_PREFETCH_CRON` | Non | `0 0 3 * * *` | Horaire du préchargement quotidien Spring, par défaut 03:00 |
+| `TIKASWELL_TIDE_PREFETCH_ZONE` | Non | `Europe/Paris` | Fuseau horaire utilisé par le scheduler marée |
+| `TIKASWELL_TIDE_PREFETCH_DAYS_AHEAD` | Non | `7` | Horizon quotidien préchargé: `7` signifie aujourd'hui jusqu'à J+7 inclus |
+| `TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD` | Non | `1` | Horizon préchargé au démarrage: `1` signifie aujourd'hui et demain |
 
-`STORMGLASS_API_KEY` est déjà prévue dans la configuration mais ne sera utilisée qu'à partir
-de l'intégration marée. Elle doit rester vide si tu n'as pas encore de clé, ou être saisie
-uniquement dans les variables d'environnement de Portainer si tu en as une.
+`STORMGLASS_API_KEY` doit être saisie uniquement dans les variables d'environnement de
+Portainer. Elle ne doit pas être mise dans le compose, le README, une issue GitHub, un commit
+ou un log.
 
 Stormglass est réservé au contexte de marée. Open-Meteo reste la source météo/marine principale.
-Le plan gratuit Stormglass est très limité, donc l'intégration devra obligatoirement passer par
-un cache SQLite avant d'être affichée dans le dashboard.
+Le plan gratuit Stormglass est très limité, donc l'application précharge un cache SQLite durable.
+Au démarrage, elle précharge seulement aujourd'hui et demain par défaut. Chaque jour à 03:00,
+elle complète ensuite la fenêtre glissante jusqu'à J+7, sans récupérer les jours déjà présents
+en cache.
 
 ## Développement local
 
@@ -70,6 +77,11 @@ OPEN_METEO_MARINE_BASE_URL=https://marine-api.open-meteo.com
 STORMGLASS_BASE_URL=https://api.stormglass.io
 STORMGLASS_API_KEY=
 TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY=6
+TIKASWELL_TIDE_PREFETCH_ENABLED=true
+TIKASWELL_TIDE_PREFETCH_CRON=0 0 3 * * *
+TIKASWELL_TIDE_PREFETCH_ZONE=Europe/Paris
+TIKASWELL_TIDE_PREFETCH_DAYS_AHEAD=7
+TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD=1
 ```
 
 Pour `STORMGLASS_API_KEY`, remplacer la valeur vide directement dans Portainer par la vraie

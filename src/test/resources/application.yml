@@ -20,3 +20,5 @@ tikaswell:
     api-key:
   tide:
     max-provider-calls-per-day: 6
+    prefetch:
+      enabled: false

@@ -25,3 +25,9 @@ tikaswell:
     api-key: ${STORMGLASS_API_KEY:}
   tide:
     max-provider-calls-per-day: ${TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY:6}
+    prefetch:
+      enabled: ${TIKASWELL_TIDE_PREFETCH_ENABLED:true}
+      cron: "${TIKASWELL_TIDE_PREFETCH_CRON:0 0 3 * * *}"
+      zone: ${TIKASWELL_TIDE_PREFETCH_ZONE:Europe/Paris}
+      days-ahead: ${TIKASWELL_TIDE_PREFETCH_DAYS_AHEAD:7}
+      startup-days-ahead: ${TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD:1}

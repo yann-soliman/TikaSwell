@@ -21,6 +21,14 @@ class TideService(
 	private val clock: Clock,
 ) {
 	fun getTideDay(spot: Spot, date: LocalDate): TideDayCache {
+		return getTideDay(spot, date, ProviderCallPurpose.TIDE_CACHE_MISS)
+	}
+
+	fun prefetchTideDay(spot: Spot, date: LocalDate): TideDayCache {
+		return getTideDay(spot, date, ProviderCallPurpose.TIDE_CACHE_PREFETCH)
+	}
+
+	private fun getTideDay(spot: Spot, date: LocalDate, purpose: ProviderCallPurpose): TideDayCache {
 		val cached = tideCacheRepository.findBySpotIdAndDateAndProvider(spot.id, date, tideProvider.name)
 		if (cached != null) {
 			return cached
@@ -40,12 +48,12 @@ class TideService(
 		}
 
 		return runCatching { tideProvider.fetchTideDay(spot, date) }
-			.onSuccess { logProviderCall(spot, date, ProviderCallPurpose.TIDE_CACHE_MISS, ProviderCallResult.SUCCESS, null) }
+			.onSuccess { logProviderCall(spot, date, purpose, ProviderCallResult.SUCCESS, null) }
 			.onFailure { exception ->
 				logProviderCall(
 					spot = spot,
 					date = date,
-					purpose = ProviderCallPurpose.TIDE_CACHE_MISS,
+					purpose = purpose,
 					result = ProviderCallResult.FAILURE,
 					message = exception.message,
 				)
