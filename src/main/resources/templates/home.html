@@ -135,11 +135,19 @@
               <dd th:text="${currentTide.phase}">Montante</dd>
             </div>
             <div>
-              <dt>Pleine mer</dt>
+              <dt>Pleine mer précédente</dt>
+              <dd th:text="${currentTide.previousHighTide}">00:45</dd>
+            </div>
+            <div>
+              <dt>Pleine mer suivante</dt>
               <dd th:text="${currentTide.nextHighTide}">12:40</dd>
             </div>
             <div>
-              <dt>Basse mer</dt>
+              <dt>Basse mer précédente</dt>
+              <dd th:text="${currentTide.previousLowTide}">07:00</dd>
+            </div>
+            <div>
+              <dt>Basse mer suivante</dt>
               <dd th:text="${currentTide.nextLowTide}">18:55</dd>
             </div>
           </dl>
@@ -217,8 +225,12 @@
                   </dd>
                 </div>
                 <div th:if="${surfSession.tide.available}">
-                  <dt>PM/BM</dt>
-                  <dd th:text="${surfSession.tide.nextHighTide} + ' / ' + ${surfSession.tide.nextLowTide}">12:40 / 18:55</dd>
+                  <dt>Pleine mer</dt>
+                  <dd th:text="${surfSession.tide.previousHighTide} + ' -> ' + ${surfSession.tide.nextHighTide}">00:45 -> 13:30</dd>
+                </div>
+                <div th:if="${surfSession.tide.available}">
+                  <dt>Basse mer</dt>
+                  <dd th:text="${surfSession.tide.previousLowTide} + ' -> ' + ${surfSession.tide.nextLowTide}">07:00 -> 19:28</dd>
                 </div>
               </dl>
               <div class="session-conditions" th:classappend="${!surfSession.conditions.captured} ? 'session-conditions--empty'">

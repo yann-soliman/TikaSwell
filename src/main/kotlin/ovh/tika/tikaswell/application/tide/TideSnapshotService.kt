@@ -24,16 +24,28 @@ class TideSnapshotService(
 	private val zoneId = ZoneId.of("Europe/Paris")
 
 	override fun snapshotAt(spot: Spot, instant: Instant): TideSnapshot? {
-		val cache = tideService.getCachedTideDay(spot, instant.atZone(zoneId).toLocalDate())
-		if (cache.unavailableReason != null) {
+		val date = instant.atZone(zoneId).toLocalDate()
+		val currentCache = tideService.getCachedTideDay(spot, date)
+		if (currentCache.unavailableReason != null) {
 			return null
 		}
 
-		val nearestPoint = cache.points.nearestTo(instant)
-		val previousHigh = cache.events.previous(TideEventType.HIGH, instant)
-		val previousLow = cache.events.previous(TideEventType.LOW, instant)
-		val nextHigh = cache.events.next(TideEventType.HIGH, instant)
-		val nextLow = cache.events.next(TideEventType.LOW, instant)
+		// Les courbes api-maree.fr sont stockées par jour ; on lit les jours voisins pour éviter les trous à minuit.
+		val caches = listOf(
+			tideService.getCachedTideDay(spot, date.minusDays(1)),
+			currentCache,
+			tideService.getCachedTideDay(spot, date.plusDays(1)),
+		).filter { it.unavailableReason == null }
+		val points = caches.flatMap { it.points }
+			.filter { it.waterHeightMeters != null }
+			.distinctBy { it.timestamp }
+			.sortedBy { it.timestamp }
+		val events = caches.flatMap { it.events }.ifEmpty { points.deriveEvents() }
+		val nearestPoint = points.nearestTo(instant)
+		val previousHigh = events.previous(TideEventType.HIGH, instant)
+		val previousLow = events.previous(TideEventType.LOW, instant)
+		val nextHigh = events.next(TideEventType.HIGH, instant)
+		val nextLow = events.next(TideEventType.LOW, instant)
 
 		return TideSnapshot(
 			spotId = spot.id,
@@ -48,8 +60,8 @@ class TideSnapshotService(
 			timeSincePreviousLowTide = previousLow?.let { Duration.between(it.timestamp, instant) },
 			timeUntilNextHighTide = nextHigh?.let { Duration.between(instant, it.timestamp) },
 			timeUntilNextLowTide = nextLow?.let { Duration.between(instant, it.timestamp) },
-			coefficient = cache.coefficient,
-			providerName = cache.providerName,
+			coefficient = currentCache.coefficient,
+			providerName = currentCache.providerName,
 		)
 	}
 
@@ -71,6 +83,27 @@ class TideSnapshotService(
 private fun List<TidePoint>.nearestTo(instant: Instant): TidePoint? =
 	filter { it.waterHeightMeters != null }
 		.minByOrNull { abs(Duration.between(it.timestamp, instant).seconds) }
+
+private fun List<TidePoint>.deriveEvents(): List<TideEvent> =
+	windowed(3)
+		.mapNotNull { (previous, current, next) ->
+			val previousHeight = previous.waterHeightMeters ?: return@mapNotNull null
+			val currentHeight = current.waterHeightMeters ?: return@mapNotNull null
+			val nextHeight = next.waterHeightMeters ?: return@mapNotNull null
+			when {
+				currentHeight >= previousHeight && currentHeight >= nextHeight -> TideEvent(
+					type = TideEventType.HIGH,
+					timestamp = current.timestamp,
+					waterHeightMeters = currentHeight,
+				)
+				currentHeight <= previousHeight && currentHeight <= nextHeight -> TideEvent(
+					type = TideEventType.LOW,
+					timestamp = current.timestamp,
+					waterHeightMeters = currentHeight,
+				)
+				else -> null
+			}
+		}
 
 private fun List<TideEvent>.previous(type: TideEventType, instant: Instant): TideEvent? =
 	filter { it.type == type && !it.timestamp.isAfter(instant) }.maxByOrNull { it.timestamp }

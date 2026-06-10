@@ -9,6 +9,7 @@ import ovh.tika.tikaswell.application.session.CreateSurfSessionCommand
 import ovh.tika.tikaswell.application.session.SurfSessionService
 import ovh.tika.tikaswell.application.spot.SpotProvider
 import ovh.tika.tikaswell.application.scoring.SurfScoreService
+import ovh.tika.tikaswell.application.tide.TideSnapshotLookup
 import ovh.tika.tikaswell.application.tide.TideService
 import ovh.tika.tikaswell.domain.ConditionSnapshot
 import ovh.tika.tikaswell.domain.ConditionsProvider
@@ -17,11 +18,12 @@ import ovh.tika.tikaswell.domain.Direction
 import ovh.tika.tikaswell.domain.Rating
 import ovh.tika.tikaswell.domain.ScoreContribution
 import ovh.tika.tikaswell.domain.SessionConditionSnapshot
+import ovh.tika.tikaswell.domain.Spot
 import ovh.tika.tikaswell.domain.SurfSession
 import ovh.tika.tikaswell.domain.TideDayCache
 import ovh.tika.tikaswell.domain.TideEvent
-import ovh.tika.tikaswell.domain.TideEventType
-import ovh.tika.tikaswell.domain.TidePoint
+import ovh.tika.tikaswell.domain.TidePhase
+import ovh.tika.tikaswell.domain.TideSnapshot
 import ovh.tika.tikaswell.domain.TideUnavailableReason
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
@@ -37,7 +39,6 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlin.math.PI
-import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.roundToInt
@@ -50,6 +51,7 @@ class HomeController(
 	private val conditionsProvider: ConditionsProvider,
 	private val surfScoreService: SurfScoreService,
 	private val tideService: TideService,
+	private val tideSnapshotLookup: TideSnapshotLookup,
 	private val conditionSnapshotRepository: ConditionSnapshotRepository,
 ) {
 	private val zoneId = ZoneId.of("Europe/Paris")
@@ -104,8 +106,8 @@ class HomeController(
 		val currentConditions = runCatching { conditionsProvider.fetchCurrentConditions(spot) }
 		val currentScore = currentConditions.getOrNull()?.let { surfScoreService.score(it) }
 		val currentTide = currentConditions.getOrNull()?.snapshot?.timestamp?.let { timestamp ->
-			tideService.getCachedTideDay(spot, timestamp.atZone(zoneId).toLocalDate())
-				.let { TideContextView.from(it, timestamp, zoneId) }
+			val cache = tideService.getCachedTideDay(spot, timestamp.atZone(zoneId).toLocalDate())
+			TideContextView.from(cache, tideSnapshotLookup.snapshotAt(spot, timestamp), zoneId)
 		}
 
 		if (!model.containsAttribute("form")) {
@@ -116,8 +118,7 @@ class HomeController(
 			SurfSessionView.from(
 				session = session,
 				zoneId = zoneId,
-				tide = tideService.getCachedTideDay(spot, session.midpoint().atZone(zoneId).toLocalDate())
-					.let { TideContextView.from(it, session.midpoint(), zoneId) },
+				tide = tideContext(spot, session.midpoint()),
 				conditions = session.id?.let { conditionSnapshotRepository.findBySessionId(it) }.orEmpty()
 					.let(SessionConditionsView::from),
 			)
@@ -128,6 +129,11 @@ class HomeController(
 		model.addAttribute("currentScore", currentScore?.let(CurrentScoreView::from))
 		model.addAttribute("scoreContributors", scoreContributors(currentScore, sessions))
 		model.addAttribute("scoreTideNote", scoreTideNote(currentScore, currentTide))
+	}
+
+	private fun tideContext(spot: Spot, instant: Instant): TideContextView {
+		val cache = tideService.getCachedTideDay(spot, instant.atZone(zoneId).toLocalDate())
+		return TideContextView.from(cache, tideSnapshotLookup.snapshotAt(spot, instant), zoneId)
 	}
 
 	private fun scoreContributors(score: CurrentScore?, sessions: List<SurfSession>): List<ScoreContributionView> {
@@ -245,6 +251,8 @@ data class TideContextView(
 	val available: Boolean,
 	val waterHeight: String,
 	val phase: String,
+	val previousHighTide: String,
+	val previousLowTide: String,
 	val nextHighTide: String,
 	val nextLowTide: String,
 	val providerName: String,
@@ -254,22 +262,21 @@ data class TideContextView(
 	companion object {
 		private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-		fun from(cache: TideDayCache, instant: Instant, zoneId: ZoneId): TideContextView {
+		fun from(cache: TideDayCache, snapshot: TideSnapshot?, zoneId: ZoneId): TideContextView {
 			if (cache.unavailableReason != null) {
 				return unavailable(cache, messageFor(cache.unavailableReason, cache.unavailableMessage))
 			}
 
-			val point = cache.points.nearestTo(instant)
-			val previousEvent = cache.events.filter { !it.timestamp.isAfter(instant) }.maxByOrNull { it.timestamp }
-			val nextEvent = cache.events.filter { !it.timestamp.isBefore(instant) }.minByOrNull { it.timestamp }
 			val station = stationLabel(cache.stationName, cache.stationDistanceKilometers)
 
 			return TideContextView(
 				available = true,
-				waterHeight = point?.waterHeightMeters?.let { "${it.format(2)} m" } ?: "n/d",
-				phase = phaseLabel(previousEvent, nextEvent),
-				nextHighTide = cache.events.next(TideEventType.HIGH, instant)?.formatAt(zoneId) ?: "n/d",
-				nextLowTide = cache.events.next(TideEventType.LOW, instant)?.formatAt(zoneId) ?: "n/d",
+				waterHeight = snapshot?.waterHeightMeters?.let { "${it.format(2)} m" } ?: "n/d",
+				phase = snapshot?.phase?.label() ?: "n/d",
+				previousHighTide = snapshot?.previousHighTide?.formatAt(zoneId) ?: "n/d",
+				previousLowTide = snapshot?.previousLowTide?.formatAt(zoneId) ?: "n/d",
+				nextHighTide = snapshot?.nextHighTide?.formatAt(zoneId) ?: "n/d",
+				nextLowTide = snapshot?.nextLowTide?.formatAt(zoneId) ?: "n/d",
 				providerName = cache.providerName,
 				station = station,
 				status = "Marée issue du cache local",
@@ -281,6 +288,8 @@ data class TideContextView(
 				available = false,
 				waterHeight = "n/d",
 				phase = "n/d",
+				previousHighTide = "n/d",
+				previousLowTide = "n/d",
 				nextHighTide = "n/d",
 				nextLowTide = "n/d",
 				providerName = cache.providerName,
@@ -296,14 +305,12 @@ data class TideContextView(
 				TideUnavailableReason.PROVIDER_UNAVAILABLE -> providerMessage ?: "Provider marée indisponible"
 			}
 
-		private fun phaseLabel(previousEvent: TideEvent?, nextEvent: TideEvent?): String =
+		private fun TidePhase.label(): String =
 			when {
-				previousEvent?.type == TideEventType.LOW && nextEvent?.type == TideEventType.HIGH -> "Montante"
-				previousEvent?.type == TideEventType.HIGH && nextEvent?.type == TideEventType.LOW -> "Descendante"
-				previousEvent?.type == TideEventType.HIGH -> "Après pleine mer"
-				previousEvent?.type == TideEventType.LOW -> "Après basse mer"
-				nextEvent?.type == TideEventType.HIGH -> "Avant pleine mer"
-				nextEvent?.type == TideEventType.LOW -> "Avant basse mer"
+				this == TidePhase.RISING -> "Montante"
+				this == TidePhase.FALLING -> "Descendante"
+				this == TidePhase.HIGH -> "Pleine mer"
+				this == TidePhase.LOW -> "Basse mer"
 				else -> "n/d"
 			}
 
@@ -430,9 +437,3 @@ private fun Int.floorMod(mod: Int): Int =
 
 private fun SurfSession.midpoint(): Instant =
 	startsAt.plus(Duration.between(startsAt, endsAt).dividedBy(2))
-
-private fun List<TidePoint>.nearestTo(instant: Instant): TidePoint? =
-	minByOrNull { abs(Duration.between(it.timestamp, instant).seconds) }
-
-private fun List<TideEvent>.next(type: TideEventType, instant: Instant): TideEvent? =
-	filter { it.type == type && !it.timestamp.isBefore(instant) }.minByOrNull { it.timestamp }

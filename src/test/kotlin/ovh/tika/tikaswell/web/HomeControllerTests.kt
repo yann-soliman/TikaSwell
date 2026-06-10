@@ -104,6 +104,10 @@ class HomeControllerTests {
 			.andExpect(content().string(containsString("Marée issue du cache local")))
 			.andExpect(content().string(containsString("3,25 m")))
 			.andExpect(content().string(containsString("Montante")))
+			.andExpect(content().string(containsString("Pleine mer précédente")))
+			.andExpect(content().string(containsString("Pleine mer suivante")))
+			.andExpect(content().string(containsString("Basse mer précédente")))
+			.andExpect(content().string(containsString("Basse mer suivante")))
 			.andExpect(content().string(containsString("12:40")))
 			.andExpect(content().string(containsString("18:55")))
 			.andExpect(content().string(containsString("Saint-Nazaire · 12,4 km")))
@@ -226,7 +230,9 @@ class HomeControllerTests {
 			.andExpect(status().isOk)
 			.andExpect(content().string(containsString("Avec marée en cache")))
 			.andExpect(content().string(containsString("3,25 m · Montante")))
-			.andExpect(content().string(containsString("12:40 / 18:55")))
+			.andExpect(content().string(containsString("Pleine mer")))
+			.andExpect(content().string(containsString("n/d -&gt; 12:40")))
+			.andExpect(content().string(containsString("07:20 -&gt; 18:55")))
 			.andExpect(content().string(containsString("La marée influence la similarité")))
 	}
 

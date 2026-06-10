@@ -55,6 +55,83 @@ class TideSnapshotServiceTests {
 		assertThat(snapshot).isNull()
 	}
 
+	@Test
+	fun `snapshot derives high and low tides from cached water level curve`() {
+		val cacheRepository = SnapshotInMemoryTideCacheRepository().apply {
+			save(
+				availableCache().copy(
+					points = listOf(
+						TidePoint(Instant.parse("2026-06-04T06:00:00Z"), 1.4),
+						TidePoint(Instant.parse("2026-06-04T07:00:00Z"), 1.1),
+						TidePoint(Instant.parse("2026-06-04T08:00:00Z"), 1.5),
+						TidePoint(Instant.parse("2026-06-04T11:00:00Z"), 4.4),
+						TidePoint(Instant.parse("2026-06-04T12:00:00Z"), 4.9),
+						TidePoint(Instant.parse("2026-06-04T13:00:00Z"), 4.5),
+						TidePoint(Instant.parse("2026-06-04T18:00:00Z"), 1.7),
+						TidePoint(Instant.parse("2026-06-04T19:00:00Z"), 1.2),
+						TidePoint(Instant.parse("2026-06-04T20:00:00Z"), 1.6),
+					),
+					events = emptyList(),
+				),
+			)
+		}
+		val service = TideSnapshotService(tideService(cacheRepository))
+
+		val snapshot = service.snapshotAt(spot, Instant.parse("2026-06-04T10:00:00Z"))
+
+		assertThat(snapshot).isNotNull()
+		assertThat(snapshot!!.phase).isEqualTo(TidePhase.RISING)
+		assertThat(snapshot.previousLowTide?.timestamp).isEqualTo(Instant.parse("2026-06-04T07:00:00Z"))
+		assertThat(snapshot.nextHighTide?.timestamp).isEqualTo(Instant.parse("2026-06-04T12:00:00Z"))
+		assertThat(snapshot.nextLowTide?.timestamp).isEqualTo(Instant.parse("2026-06-04T19:00:00Z"))
+	}
+
+	@Test
+	fun `snapshot uses neighboring cached days to derive border tide events`() {
+		val cacheRepository = SnapshotInMemoryTideCacheRepository().apply {
+			save(
+				cache(
+					date = LocalDate.parse("2026-06-03"),
+					points = listOf(
+						TidePoint(Instant.parse("2026-06-03T21:00:00Z"), 4.5),
+						TidePoint(Instant.parse("2026-06-03T22:00:00Z"), 4.9),
+						TidePoint(Instant.parse("2026-06-03T23:00:00Z"), 4.4),
+					),
+				),
+			)
+			save(
+				cache(
+					date = LocalDate.parse("2026-06-04"),
+					points = listOf(
+						TidePoint(Instant.parse("2026-06-04T00:00:00Z"), 3.5),
+						TidePoint(Instant.parse("2026-06-04T01:00:00Z"), 2.4),
+						TidePoint(Instant.parse("2026-06-04T02:00:00Z"), 1.2),
+						TidePoint(Instant.parse("2026-06-04T03:00:00Z"), 1.6),
+					),
+				),
+			)
+			save(
+				cache(
+					date = LocalDate.parse("2026-06-05"),
+					points = listOf(
+						TidePoint(Instant.parse("2026-06-05T00:00:00Z"), 4.3),
+						TidePoint(Instant.parse("2026-06-05T01:00:00Z"), 4.8),
+						TidePoint(Instant.parse("2026-06-05T02:00:00Z"), 4.2),
+					),
+				),
+			)
+		}
+		val service = TideSnapshotService(tideService(cacheRepository))
+
+		val snapshot = service.snapshotAt(spot, Instant.parse("2026-06-04T00:30:00Z"))
+
+		assertThat(snapshot).isNotNull()
+		assertThat(snapshot!!.phase).isEqualTo(TidePhase.FALLING)
+		assertThat(snapshot.previousHighTide?.timestamp).isEqualTo(Instant.parse("2026-06-03T22:00:00Z"))
+		assertThat(snapshot.nextLowTide?.timestamp).isEqualTo(Instant.parse("2026-06-04T02:00:00Z"))
+		assertThat(snapshot.nextHighTide?.timestamp).isEqualTo(Instant.parse("2026-06-05T01:00:00Z"))
+	}
+
 	private fun tideService(cacheRepository: SnapshotInMemoryTideCacheRepository): TideService =
 		TideService(
 			tideProvider = FakeTideProvider(),
@@ -65,17 +142,8 @@ class TideSnapshotServiceTests {
 		)
 
 	private fun availableCache(): TideDayCache =
-		TideDayCache(
-			id = null,
-			spotId = spot.id,
+		cache(
 			date = LocalDate.parse("2026-06-04"),
-			providerName = "api-maree.fr",
-			fetchedAt = clock.instant(),
-			stationName = "Saint-Nazaire",
-			stationDistanceKilometers = 12.4,
-			coefficient = null,
-			unavailableReason = null,
-			unavailableMessage = null,
 			points = listOf(
 				TidePoint(Instant.parse("2026-06-04T09:00:00Z"), 2.9),
 				TidePoint(Instant.parse("2026-06-04T10:00:00Z"), 3.2),
@@ -85,6 +153,26 @@ class TideSnapshotServiceTests {
 				TideEvent(TideEventType.HIGH, Instant.parse("2026-06-04T12:40:00Z"), 4.8),
 				TideEvent(TideEventType.LOW, Instant.parse("2026-06-04T18:55:00Z"), 1.2),
 			),
+		)
+
+	private fun cache(
+		date: LocalDate,
+		points: List<TidePoint>,
+		events: List<TideEvent> = emptyList(),
+	): TideDayCache =
+		TideDayCache(
+			id = null,
+			spotId = spot.id,
+			date = date,
+			providerName = "api-maree.fr",
+			fetchedAt = clock.instant(),
+			stationName = "Saint-Nazaire",
+			stationDistanceKilometers = 12.4,
+			coefficient = null,
+			unavailableReason = null,
+			unavailableMessage = null,
+			points = points,
+			events = events,
 		)
 
 	private class FakeTideProvider : TideProvider {
