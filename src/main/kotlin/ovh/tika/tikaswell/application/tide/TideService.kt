@@ -162,8 +162,8 @@ class TideService(
 }
 
 private fun TideDayCache.isUsableForPrefetch(): Boolean =
-	// Un cache disponible sans point de hauteur est incomplet pour le scoring et doit pouvoir être réparé.
-	unavailableReason != null || points.isNotEmpty()
+	// Un cache disponible sans hauteur exploitable est incomplet pour le scoring et doit pouvoir être réparé.
+	unavailableReason != null || points.any { it.waterHeightMeters != null }
 
 private fun Throwable.sanitizedProviderMessage(): String {
 	val rawMessage = message ?: return "Provider marée indisponible"

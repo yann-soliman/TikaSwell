@@ -93,6 +93,26 @@ class TideServiceTests {
 	}
 
 	@Test
+	fun `service repairs cached tide day when all water heights are missing`() {
+		val cacheRepository = InMemoryTideCacheRepository().apply {
+			save(
+				availableCache().copy(
+					points = listOf(TidePoint(Instant.parse("2026-06-04T10:00:00Z"), null)),
+				),
+			)
+		}
+		val provider = FakeTideProvider()
+		val service = service(provider = provider, cacheRepository = cacheRepository)
+
+		val tide = service.prefetchTideDay(spot, date)
+
+		assertThat(provider.fetchCount).isEqualTo(1)
+		assertThat(tide.points.first().waterHeightMeters).isEqualTo(3.2)
+		assertThat(cacheRepository.findBySpotIdAndDateAndProvider(spot.id, date, provider.name)?.points?.first()?.waterHeightMeters)
+			.isEqualTo(3.2)
+	}
+
+	@Test
 	fun `service stores sanitized provider failure messages`() {
 		val calls = InMemoryProviderCallLogRepository()
 		val provider = FakeTideProvider(failure = IllegalStateException("403 Forbidden: {\"errors\":{\"key\":\"API key is invalid\"}}"))
