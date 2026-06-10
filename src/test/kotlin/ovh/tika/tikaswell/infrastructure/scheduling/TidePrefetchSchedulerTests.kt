@@ -1,6 +1,7 @@
 package ovh.tika.tikaswell.infrastructure.scheduling
 
 import ovh.tika.tikaswell.application.spot.SpotProvider
+import ovh.tika.tikaswell.application.session.SurfSessionRepository
 import ovh.tika.tikaswell.application.tide.ProviderCallLogRepository
 import ovh.tika.tikaswell.application.tide.TideCacheRepository
 import ovh.tika.tikaswell.application.tide.TidePrefetchProperties
@@ -8,8 +9,11 @@ import ovh.tika.tikaswell.application.tide.TideProperties
 import ovh.tika.tikaswell.application.tide.TideProvider
 import ovh.tika.tikaswell.application.tide.TideService
 import ovh.tika.tikaswell.domain.ProviderCallLog
+import ovh.tika.tikaswell.domain.Rating
 import ovh.tika.tikaswell.domain.Spot
 import ovh.tika.tikaswell.domain.SpotId
+import ovh.tika.tikaswell.domain.SurfSession
+import ovh.tika.tikaswell.domain.SurfSessionId
 import ovh.tika.tikaswell.domain.TideDayCache
 import ovh.tika.tikaswell.domain.TidePoint
 import org.assertj.core.api.Assertions.assertThat
@@ -68,9 +72,36 @@ class TidePrefetchSchedulerTests {
 		assertThat(provider.fetchedDates).containsExactly(LocalDate.parse("2026-06-04"))
 	}
 
+	@Test
+	fun `scheduler backfills historical session dates`() {
+		val provider = RecordingTideProvider()
+		val sessionRepository = InMemorySurfSessionRepository().apply {
+			save(session(Instant.parse("2026-06-02T16:30:00Z"), Instant.parse("2026-06-02T18:30:00Z")))
+		}
+		val scheduler = scheduler(provider, sessionRepository = sessionRepository)
+
+		scheduler.backfillHistoricalSessions(trigger = "test")
+
+		assertThat(provider.fetchedDates).containsExactly(LocalDate.parse("2026-06-02"))
+	}
+
+	@Test
+	fun `scheduler does not backfill today session covered by regular window`() {
+		val provider = RecordingTideProvider()
+		val sessionRepository = InMemorySurfSessionRepository().apply {
+			save(session(Instant.parse("2026-06-04T08:00:00Z"), Instant.parse("2026-06-04T10:00:00Z")))
+		}
+		val scheduler = scheduler(provider, sessionRepository = sessionRepository)
+
+		scheduler.backfillHistoricalSessions(trigger = "test")
+
+		assertThat(provider.fetchedDates).isEmpty()
+	}
+
 	private fun scheduler(
 		provider: RecordingTideProvider,
 		cacheRepository: InMemoryTideCacheRepository = InMemoryTideCacheRepository(),
+		sessionRepository: InMemorySurfSessionRepository = InMemorySurfSessionRepository(),
 	): TidePrefetchScheduler =
 		TidePrefetchScheduler(
 			tideService = TideService(
@@ -90,6 +121,7 @@ class TidePrefetchSchedulerTests {
 			spotProvider = object : SpotProvider {
 				override fun initialSpot(): Spot = spot
 			},
+			surfSessionRepository = sessionRepository,
 			properties = TideProperties(
 				maxProviderCallsPerDay = 6,
 				prefetch = TidePrefetchProperties(
@@ -99,6 +131,16 @@ class TidePrefetchSchedulerTests {
 				),
 			),
 			clock = clock,
+		)
+
+	private fun session(startsAt: Instant, endsAt: Instant): SurfSession =
+		SurfSession(
+			id = null,
+			spotId = spot.id,
+			startsAt = startsAt,
+			endsAt = endsAt,
+			rating = Rating(8),
+			notes = null,
 		)
 
 	private fun cache(date: LocalDate): TideDayCache =
@@ -151,4 +193,21 @@ private class InMemoryProviderCallLogRepository : ProviderCallLogRepository {
 	override fun save(call: ProviderCallLog): ProviderCallLog = call
 
 	override fun countByProviderNameAndCalledAtBetween(providerName: String, startsAt: Instant, endsAt: Instant): Int = 0
+}
+
+private class InMemorySurfSessionRepository : SurfSessionRepository {
+	private val sessions = linkedMapOf<SurfSessionId, SurfSession>()
+	private var nextId = 1L
+
+	override fun save(session: SurfSession): SurfSession {
+		val saved = session.copy(id = SurfSessionId(nextId++))
+		sessions[saved.id!!] = saved
+		return saved
+	}
+
+	override fun findById(id: SurfSessionId): SurfSession? =
+		sessions[id]
+
+	override fun findBySpotId(spotId: SpotId): List<SurfSession> =
+		sessions.values.filter { it.spotId == spotId }
 }

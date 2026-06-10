@@ -57,6 +57,8 @@ Comportement attendu :
 - au calcul du score, l'application lit le cache et n'appelle pas Stormglass ;
 - au démarrage, le scheduler précharge aujourd'hui et demain par défaut ;
 - chaque jour à 03:00, le scheduler complète la fenêtre aujourd'hui -> J+7 ;
+- après chaque préchargement, le scheduler tente aussi de backfiller les dates passées des
+  sessions enregistrées, dans la limite du quota restant ;
 - si une journée est déjà en cache avec des hauteurs exploitables, elle n'est pas refetchée ;
 - si un cache est incomplet, par exemple points présents mais hauteurs absentes, il peut être remplacé au prochain préchargement.
 
