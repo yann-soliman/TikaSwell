@@ -6,6 +6,11 @@ spring:
       maximum-pool-size: 1
       connection-test-query: SELECT 1
 
+server:
+  servlet:
+    session:
+      tracking-modes: cookie
+
 tikaswell:
   spot:
     id: initial

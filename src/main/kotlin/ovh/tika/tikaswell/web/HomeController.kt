@@ -29,7 +29,7 @@ import org.springframework.validation.BindingResult
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.ModelAttribute
 import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.servlet.mvc.support.RedirectAttributes
+import org.springframework.web.bind.annotation.RequestParam
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -55,7 +55,13 @@ class HomeController(
 	private val zoneId = ZoneId.of("Europe/Paris")
 
 	@GetMapping("/")
-	fun home(model: Model): String {
+	fun home(
+		@RequestParam(name = "saved", required = false) saved: String?,
+		model: Model,
+	): String {
+		if (saved == "1") {
+			model.addAttribute("message", "Session enregistrée")
+		}
 		populateHomeModel(model, SurfSessionForm.default())
 		return "home"
 	}
@@ -65,7 +71,6 @@ class HomeController(
 		@Valid @ModelAttribute("form") form: SurfSessionForm,
 		bindingResult: BindingResult,
 		model: Model,
-		redirectAttributes: RedirectAttributes,
 	): String {
 		if (form.startTime != null && form.endTime != null && !form.startTime.isBefore(form.endTime)) {
 			bindingResult.rejectValue("endTime", "session.endTime.afterStart", "L'heure de fin doit être après l'heure de début")
@@ -90,8 +95,7 @@ class HomeController(
 			),
 		)
 
-		redirectAttributes.addFlashAttribute("message", "Session enregistrée")
-		return "redirect:/"
+		return "redirect:/?saved=1"
 	}
 
 	private fun populateHomeModel(model: Model, form: SurfSessionForm) {

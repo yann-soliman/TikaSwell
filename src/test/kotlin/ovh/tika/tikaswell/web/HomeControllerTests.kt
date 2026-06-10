@@ -173,12 +173,13 @@ class HomeControllerTests {
 				.param("endTime", "11:00")
 				.param("rating", "8")
 				.param("notes", "Clean morning lines"),
-		)
+			)
 			.andExpect(status().is3xxRedirection)
-			.andExpect(redirectedUrl("/"))
+			.andExpect(redirectedUrl("/?saved=1"))
 
-		mockMvc.perform(get("/"))
+		mockMvc.perform(get("/").param("saved", "1"))
 			.andExpect(status().isOk)
+			.andExpect(content().string(containsString("Session enregistrée")))
 			.andExpect(content().string(containsString("Clean morning lines")))
 			.andExpect(content().string(containsString("Marée absente du cache pour cette date")))
 			.andExpect(content().string(containsString("Provider de test")))
