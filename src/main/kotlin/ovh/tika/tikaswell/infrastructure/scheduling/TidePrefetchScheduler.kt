@@ -3,6 +3,7 @@ package ovh.tika.tikaswell.infrastructure.scheduling
 import ovh.tika.tikaswell.application.spot.SpotProvider
 import ovh.tika.tikaswell.application.tide.TideProperties
 import ovh.tika.tikaswell.application.tide.TideService
+import ovh.tika.tikaswell.domain.TideUnavailableReason
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.event.ApplicationReadyEvent
@@ -42,7 +43,7 @@ class TidePrefetchScheduler(
 			daysAhead,
 		)
 
-		(0..daysAhead).forEach { offset ->
+		for (offset in 0..daysAhead) {
 			val date = today.plusDays(offset.toLong())
 			val tide = tideService.prefetchTideDay(spot, date)
 			if (tide.unavailableReason != null) {
@@ -52,6 +53,10 @@ class TidePrefetchScheduler(
 					tide.unavailableReason,
 					tide.unavailableMessage ?: "pas de détail",
 				)
+				if (tide.unavailableReason.shouldStopPrefetchWindow()) {
+					logger.info("Arrêt du préchargement marée {} après {}", trigger, date)
+					break
+				}
 			}
 		}
 	}
@@ -60,3 +65,8 @@ class TidePrefetchScheduler(
 		private val logger = LoggerFactory.getLogger(TidePrefetchScheduler::class.java)
 	}
 }
+
+private fun TideUnavailableReason.shouldStopPrefetchWindow(): Boolean =
+	this == TideUnavailableReason.MISSING_API_KEY ||
+		this == TideUnavailableReason.QUOTA_REACHED ||
+		this == TideUnavailableReason.PROVIDER_UNAVAILABLE

@@ -58,6 +58,16 @@ class TidePrefetchSchedulerTests {
 		)
 	}
 
+	@Test
+	fun `scheduler stops current window when provider is unavailable`() {
+		val provider = RecordingTideProvider(failure = IllegalStateException("403 Forbidden"))
+		val scheduler = scheduler(provider)
+
+		scheduler.prefetchWindow(daysAhead = 2, trigger = "test")
+
+		assertThat(provider.fetchedDates).containsExactly(LocalDate.parse("2026-06-04"))
+	}
+
 	private fun scheduler(
 		provider: RecordingTideProvider,
 		cacheRepository: InMemoryTideCacheRepository = InMemoryTideCacheRepository(),
@@ -107,13 +117,16 @@ class TidePrefetchSchedulerTests {
 			events = emptyList(),
 		)
 
-	private inner class RecordingTideProvider : TideProvider {
+	private inner class RecordingTideProvider(
+		private val failure: RuntimeException? = null,
+	) : TideProvider {
 		override val name: String = "Stormglass"
 		override val requiredCallsPerFetch: Int = 2
 		val fetchedDates = mutableListOf<LocalDate>()
 
 		override fun fetchTideDay(spot: Spot, date: LocalDate): TideDayCache {
 			fetchedDates += date
+			failure?.let { throw it }
 			return cache(date)
 		}
 	}

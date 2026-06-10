@@ -82,7 +82,7 @@ class TideService(
 					date = date,
 					purpose = purpose,
 					result = ProviderCallResult.FAILURE,
-					message = exception.message,
+					message = exception.sanitizedProviderMessage(),
 				)
 			}
 			.getOrElse { exception ->
@@ -90,7 +90,7 @@ class TideService(
 					spot = spot,
 					date = date,
 					reason = TideUnavailableReason.PROVIDER_UNAVAILABLE,
-					message = exception.message ?: "Provider marée indisponible",
+					message = exception.sanitizedProviderMessage(),
 				)
 			}
 			.let { cache ->
@@ -158,5 +158,15 @@ class TideService(
 
 	private companion object {
 		const val SECONDS_PER_DAY = 86_400L
+	}
+}
+
+private fun Throwable.sanitizedProviderMessage(): String {
+	val rawMessage = message ?: return "Provider marée indisponible"
+	return when {
+		rawMessage.contains("API key is invalid", ignoreCase = true) -> "Clé API marée refusée par le provider"
+		rawMessage.contains("403") -> "Accès refusé par le provider marée"
+		rawMessage.contains("401") -> "Authentification refusée par le provider marée"
+		else -> "Provider marée indisponible"
 	}
 }

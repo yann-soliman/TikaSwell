@@ -92,6 +92,21 @@ class TideServiceTests {
 		}
 	}
 
+	@Test
+	fun `service stores sanitized provider failure messages`() {
+		val calls = InMemoryProviderCallLogRepository()
+		val provider = FakeTideProvider(failure = IllegalStateException("403 Forbidden: {\"errors\":{\"key\":\"API key is invalid\"}}"))
+		val service = service(provider = provider, callRepository = calls)
+
+		val tide = service.prefetchTideDay(spot, date)
+
+		assertThat(tide.unavailableReason).isEqualTo(TideUnavailableReason.PROVIDER_UNAVAILABLE)
+		assertThat(tide.unavailableMessage).isEqualTo("Clé API marée refusée par le provider")
+		assertThat(calls.calls).allSatisfy { call ->
+			assertThat(call.message).isEqualTo("Clé API marée refusée par le provider")
+		}
+	}
+
 	private fun service(
 		provider: TideProvider = FakeTideProvider(),
 		cacheRepository: InMemoryTideCacheRepository = InMemoryTideCacheRepository(),
@@ -124,6 +139,7 @@ class TideServiceTests {
 	private inner class FakeTideProvider(
 		private val requiredCalls: Int = 2,
 		private val unavailableReason: TideUnavailableReason? = null,
+		private val failure: RuntimeException? = null,
 	) : TideProvider {
 		override val name: String = "Stormglass"
 		override val requiredCallsPerFetch: Int = requiredCalls
@@ -136,6 +152,7 @@ class TideServiceTests {
 
 		override fun fetchTideDay(spot: Spot, date: LocalDate): TideDayCache {
 			fetchCount += 1
+			failure?.let { throw it }
 			return availableCache()
 		}
 	}
