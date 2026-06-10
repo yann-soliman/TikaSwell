@@ -54,6 +54,9 @@
           <strong>Indisponible</strong>
         </div>
         <p class="score-detail" th:if="${currentScore != null}" th:text="'Confiance : ' + ${currentScore.confidence}">Confiance : 0 %</p>
+        <p class="score-detail score-detail--note" th:text="${scoreTideNote}">
+          La marée est ignorée dans la similarité faute de données exploitables.
+        </p>
       </article>
 
       <article class="panel conditions-panel">
@@ -107,6 +110,42 @@
               </tr>
             </tbody>
           </table>
+        </div>
+      </article>
+
+      <article class="panel tide-panel" aria-labelledby="tide-title">
+        <div class="panel-heading">
+          <h2 id="tide-title">Marée</h2>
+          <span th:if="${currentTide != null}" th:text="${currentTide.providerName}">Stormglass</span>
+        </div>
+        <p class="provider-error" th:if="${currentTide == null}">
+          Marée indisponible sans conditions actuelles.
+        </p>
+        <div th:if="${currentTide != null}">
+          <p class="tide-status" th:classappend="${!currentTide.available} ? 'tide-status--warning'" th:text="${currentTide.status}">
+            Marée issue du cache local
+          </p>
+          <dl class="tide-grid">
+            <div>
+              <dt>Hauteur</dt>
+              <dd th:text="${currentTide.waterHeight}">3,20 m</dd>
+            </div>
+            <div>
+              <dt>Phase</dt>
+              <dd th:text="${currentTide.phase}">Montante</dd>
+            </div>
+            <div>
+              <dt>Pleine mer</dt>
+              <dd th:text="${currentTide.nextHighTide}">12:40</dd>
+            </div>
+            <div>
+              <dt>Basse mer</dt>
+              <dd th:text="${currentTide.nextLowTide}">18:55</dd>
+            </div>
+          </dl>
+          <p class="tide-station" th:if="${currentTide.station != null}" th:text="${currentTide.station}">
+            Saint-Nazaire · 12,4 km
+          </p>
         </div>
       </article>
     </section>
@@ -170,6 +209,18 @@
                 <time th:text="${surfSession.date}">04/06/2026</time>
                 <span th:text="${surfSession.timeWindow}">09:00 - 11:00</span>
               </p>
+              <dl class="session-tide" th:classappend="${!surfSession.tide.available} ? 'session-tide--warning'">
+                <div>
+                  <dt>Marée</dt>
+                  <dd th:text="${surfSession.tide.available} ? ${surfSession.tide.waterHeight} + ' · ' + ${surfSession.tide.phase} : ${surfSession.tide.status}">
+                    3,20 m · Montante
+                  </dd>
+                </div>
+                <div th:if="${surfSession.tide.available}">
+                  <dt>PM/BM</dt>
+                  <dd th:text="${surfSession.tide.nextHighTide} + ' / ' + ${surfSession.tide.nextLowTide}">12:40 / 18:55</dd>
+                </div>
+              </dl>
               <small th:if="${surfSession.notes}" th:text="${surfSession.notes}">Notes</small>
             </div>
           </li>

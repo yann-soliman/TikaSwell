@@ -112,7 +112,7 @@ h2 {
 
 .dashboard {
   display: grid;
-  grid-template-columns: minmax(260px, 0.8fr) minmax(320px, 1.2fr);
+  grid-template-columns: minmax(240px, 0.65fr) minmax(360px, 1.25fr) minmax(240px, 0.7fr);
   gap: 24px;
   padding-top: 24px;
 }
@@ -256,6 +256,13 @@ button:hover {
   font-weight: 800;
 }
 
+.score-detail--note {
+  max-width: 34rem;
+  margin-top: 12px;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
 .score-value--empty strong {
   font-size: clamp(1.6rem, 4vw, 2.6rem);
 }
@@ -315,6 +322,57 @@ button:hover {
 .empty-copy {
   margin-bottom: 0;
   color: var(--muted);
+}
+
+.tide-panel {
+  display: grid;
+  align-content: start;
+}
+
+.tide-status {
+  margin: 0 0 12px;
+  color: var(--accent-dark);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.tide-status--warning {
+  color: var(--danger);
+}
+
+.tide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.tide-grid div {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(217, 208, 191, 0.82);
+  background: #fffdf8;
+}
+
+.tide-grid dt,
+.session-tide dt {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.tide-grid dd {
+  margin: 4px 0 0;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.tide-station {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .panel-heading {
@@ -383,6 +441,28 @@ button:hover {
   line-height: 1.5;
 }
 
+.session-tide {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 0 0 8px;
+}
+
+.session-tide div {
+  min-width: 0;
+}
+
+.session-tide dd {
+  margin: 2px 0 0;
+  color: var(--accent-dark);
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.session-tide--warning dd {
+  color: var(--danger);
+}
+
 .contributors-panel {
   margin-top: 24px;
 }
@@ -433,6 +513,7 @@ button:hover {
 
   .field-grid,
   .spot-meta,
+  .tide-grid,
   .contributor-list li {
     grid-template-columns: 1fr;
   }

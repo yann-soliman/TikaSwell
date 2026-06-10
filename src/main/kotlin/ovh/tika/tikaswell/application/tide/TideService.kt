@@ -28,6 +28,33 @@ class TideService(
 		return getTideDay(spot, date, ProviderCallPurpose.TIDE_CACHE_PREFETCH)
 	}
 
+	fun getCachedTideDay(spot: Spot, date: LocalDate): TideDayCache {
+		val cached = tideCacheRepository.findBySpotIdAndDateAndProvider(spot.id, date, tideProvider.name)
+		if (cached != null) {
+			return cached
+		}
+
+		tideProvider.unavailableReason()?.let { reason ->
+			return unavailable(
+				spot = spot,
+				date = date,
+				reason = reason,
+				message = tideProvider.unavailableMessage() ?: "Provider marée indisponible",
+			)
+		}
+
+		if (!hasRemainingQuotaFor(tideProvider)) {
+			return unavailable(spot, date, TideUnavailableReason.QUOTA_REACHED, "Quota marée atteint pour aujourd'hui")
+		}
+
+		return unavailable(
+			spot = spot,
+			date = date,
+			reason = TideUnavailableReason.CACHE_MISS,
+			message = "Marée absente du cache pour cette date",
+		)
+	}
+
 	private fun getTideDay(spot: Spot, date: LocalDate, purpose: ProviderCallPurpose): TideDayCache {
 		val cached = tideCacheRepository.findBySpotIdAndDateAndProvider(spot.id, date, tideProvider.name)
 		if (cached != null) {

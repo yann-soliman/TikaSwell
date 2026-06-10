@@ -4,8 +4,20 @@ import ovh.tika.tikaswell.domain.ConditionSnapshot
 import ovh.tika.tikaswell.domain.ConditionsProvider
 import ovh.tika.tikaswell.domain.CurrentConditions
 import ovh.tika.tikaswell.domain.Direction
+import ovh.tika.tikaswell.domain.ProviderCallLog
+import ovh.tika.tikaswell.domain.ProviderCallPurpose
+import ovh.tika.tikaswell.domain.ProviderCallResult
 import ovh.tika.tikaswell.domain.Spot
+import ovh.tika.tikaswell.domain.SpotId
 import ovh.tika.tikaswell.domain.TimeWindow
+import ovh.tika.tikaswell.domain.TideDayCache
+import ovh.tika.tikaswell.domain.TideEvent
+import ovh.tika.tikaswell.domain.TideEventType
+import ovh.tika.tikaswell.domain.TidePoint
+import ovh.tika.tikaswell.domain.TideUnavailableReason
+import ovh.tika.tikaswell.application.tide.ProviderCallLogRepository
+import ovh.tika.tikaswell.application.tide.TideCacheRepository
+import ovh.tika.tikaswell.application.tide.TideProvider
 import org.hamcrest.Matchers.containsString
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -24,6 +36,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.Instant
+import java.time.LocalDate
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -35,8 +48,22 @@ class HomeControllerTests {
 	@Autowired
 	private lateinit var jdbcTemplate: JdbcTemplate
 
+	@Autowired
+	private lateinit var tideCacheRepository: TideCacheRepository
+
+	@Autowired
+	private lateinit var providerCallLogRepository: ProviderCallLogRepository
+
+	@Autowired
+	private lateinit var tideProvider: TestTideProvider
+
 	@BeforeEach
 	fun cleanDatabase() {
+		tideProvider.unavailableReason = null
+		jdbcTemplate.update("DELETE FROM provider_call_log")
+		jdbcTemplate.update("DELETE FROM tide_points")
+		jdbcTemplate.update("DELETE FROM tide_events")
+		jdbcTemplate.update("DELETE FROM tide_day_cache")
 		jdbcTemplate.update("DELETE FROM condition_snapshots")
 		jdbcTemplate.update("DELETE FROM surf_sessions")
 	}
@@ -55,8 +82,57 @@ class HomeControllerTests {
 			.andExpect(content().string(containsString("Houle")))
 			.andExpect(content().string(containsString("Mer du vent")))
 			.andExpect(content().string(containsString("Comment lire ce score ?")))
+			.andExpect(content().string(containsString("Marée absente du cache pour cette date")))
+			.andExpect(content().string(containsString("La marée est ignorée dans la similarité faute de données exploitables.")))
 			.andExpect(content().string(containsString("Ajouter une session")))
 			.andExpect(content().string(containsString("Aucune session enregistrée pour le moment.")))
+	}
+
+	@Test
+	fun `home page renders available tide context from cache`() {
+		tideCacheRepository.save(availableTideCache(LocalDate.parse("2026-06-04")))
+
+		mockMvc.perform(get("/"))
+			.andExpect(status().isOk)
+			.andExpect(content().string(containsString("Marée")))
+			.andExpect(content().string(containsString("Marée issue du cache local")))
+			.andExpect(content().string(containsString("3,25 m")))
+			.andExpect(content().string(containsString("Montante")))
+			.andExpect(content().string(containsString("12:40")))
+			.andExpect(content().string(containsString("18:55")))
+			.andExpect(content().string(containsString("Saint-Nazaire · 12,4 km")))
+			.andExpect(content().string(containsString("La marée est affichée pour le contexte, mais elle n&#39;influence pas encore la similarité.")))
+	}
+
+	@Test
+	fun `home page renders quota reached tide state without provider fetch`() {
+		repeat(6) {
+			providerCallLogRepository.save(
+				ProviderCallLog(
+					id = null,
+					providerName = "Stormglass",
+					spotId = SpotId("initial"),
+					calledForDate = LocalDate.parse("2026-06-04"),
+					calledAt = Instant.now(),
+					purpose = ProviderCallPurpose.TIDE_CACHE_PREFETCH,
+					result = ProviderCallResult.SUCCESS,
+					message = null,
+				),
+			)
+		}
+
+		mockMvc.perform(get("/"))
+			.andExpect(status().isOk)
+			.andExpect(content().string(containsString("Quota marée atteint pour aujourd&#39;hui")))
+	}
+
+	@Test
+	fun `home page renders provider unavailable tide state`() {
+		tideProvider.unavailableReason = TideUnavailableReason.PROVIDER_UNAVAILABLE
+
+		mockMvc.perform(get("/"))
+			.andExpect(status().isOk)
+			.andExpect(content().string(containsString("Provider marée indisponible pour le test")))
 	}
 
 	@Test
@@ -89,10 +165,55 @@ class HomeControllerTests {
 		mockMvc.perform(get("/"))
 			.andExpect(status().isOk)
 			.andExpect(content().string(containsString("Clean morning lines")))
+			.andExpect(content().string(containsString("Marée absente du cache pour cette date")))
 			.andExpect(content().string(containsString("Score estimé")))
 			.andExpect(content().string(containsString("Sessions qui influencent le score")))
 			.andExpect(content().string(containsString("8")))
 	}
+
+	@Test
+	fun `session history renders tide context from cache`() {
+		tideCacheRepository.save(availableTideCache(LocalDate.parse("2026-06-04")))
+		mockMvc.perform(
+			post("/sessions")
+				.param("date", "2026-06-04")
+				.param("startTime", "09:00")
+				.param("endTime", "11:00")
+				.param("rating", "8")
+				.param("notes", "Avec marée en cache"),
+		)
+			.andExpect(status().is3xxRedirection)
+
+		mockMvc.perform(get("/"))
+			.andExpect(status().isOk)
+			.andExpect(content().string(containsString("Avec marée en cache")))
+			.andExpect(content().string(containsString("3,25 m · Montante")))
+			.andExpect(content().string(containsString("12:40 / 18:55")))
+	}
+
+	private fun availableTideCache(date: LocalDate): TideDayCache =
+		TideDayCache(
+			id = null,
+			spotId = SpotId("initial"),
+			date = date,
+			providerName = "Stormglass",
+			fetchedAt = Instant.parse("2026-06-04T02:00:00Z"),
+			stationName = "Saint-Nazaire",
+			stationDistanceKilometers = 12.4,
+			coefficient = null,
+			unavailableReason = null,
+			unavailableMessage = null,
+			points = listOf(
+				TidePoint(Instant.parse("2026-06-04T08:00:00Z"), 3.25),
+				TidePoint(Instant.parse("2026-06-04T09:00:00Z"), 3.0),
+				TidePoint(Instant.parse("2026-06-04T10:00:00Z"), 3.25),
+			),
+			events = listOf(
+				TideEvent(TideEventType.LOW, Instant.parse("2026-06-04T05:20:00Z"), 1.1),
+				TideEvent(TideEventType.HIGH, Instant.parse("2026-06-04T10:40:00Z"), 4.8),
+				TideEvent(TideEventType.LOW, Instant.parse("2026-06-04T16:55:00Z"), 1.2),
+			),
+		)
 
 	@TestConfiguration
 	class TestConditionsProviderConfig {
@@ -137,5 +258,26 @@ class HomeControllerTests {
 						providerName = name,
 					)
 			}
+
+		@Bean
+		@Primary
+		fun testTideProvider(): TestTideProvider = TestTideProvider()
+	}
+}
+
+class TestTideProvider : TideProvider {
+	override val name: String = "Stormglass"
+	override val requiredCallsPerFetch: Int = 2
+	var unavailableReason: TideUnavailableReason? = null
+	var fetchCount: Int = 0
+
+	override fun unavailableReason(): TideUnavailableReason? = unavailableReason
+
+	override fun unavailableMessage(): String? =
+		unavailableReason?.let { "Provider marée indisponible pour le test" }
+
+	override fun fetchTideDay(spot: Spot, date: LocalDate): TideDayCache {
+		fetchCount += 1
+		error("Le rendu web ne doit pas déclencher de fetch marée")
 	}
 }

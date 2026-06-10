@@ -8,12 +8,18 @@ import ovh.tika.tikaswell.application.session.CreateSurfSessionCommand
 import ovh.tika.tikaswell.application.session.SurfSessionService
 import ovh.tika.tikaswell.application.spot.SpotProvider
 import ovh.tika.tikaswell.application.scoring.SurfScoreService
+import ovh.tika.tikaswell.application.tide.TideService
 import ovh.tika.tikaswell.domain.ConditionSnapshot
 import ovh.tika.tikaswell.domain.ConditionsProvider
 import ovh.tika.tikaswell.domain.CurrentScore
 import ovh.tika.tikaswell.domain.Rating
 import ovh.tika.tikaswell.domain.ScoreContribution
 import ovh.tika.tikaswell.domain.SurfSession
+import ovh.tika.tikaswell.domain.TideDayCache
+import ovh.tika.tikaswell.domain.TideEvent
+import ovh.tika.tikaswell.domain.TideEventType
+import ovh.tika.tikaswell.domain.TidePoint
+import ovh.tika.tikaswell.domain.TideUnavailableReason
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.validation.BindingResult
@@ -21,10 +27,13 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.ModelAttribute
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.servlet.mvc.support.RedirectAttributes
+import java.time.Duration
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import kotlin.math.abs
 
 @Controller
 class HomeController(
@@ -32,6 +41,7 @@ class HomeController(
 	private val surfSessionService: SurfSessionService,
 	private val conditionsProvider: ConditionsProvider,
 	private val surfScoreService: SurfScoreService,
+	private val tideService: TideService,
 ) {
 	private val zoneId = ZoneId.of("Europe/Paris")
 
@@ -80,16 +90,29 @@ class HomeController(
 		val sessions = surfSessionService.listForInitialSpot(spot.id)
 		val currentConditions = runCatching { conditionsProvider.fetchCurrentConditions(spot) }
 		val currentScore = currentConditions.getOrNull()?.let { surfScoreService.score(it) }
+		val currentTide = currentConditions.getOrNull()?.snapshot?.timestamp?.let { timestamp ->
+			tideService.getCachedTideDay(spot, timestamp.atZone(zoneId).toLocalDate())
+				.let { TideContextView.from(it, timestamp, zoneId) }
+		}
 
 		if (!model.containsAttribute("form")) {
 			model.addAttribute("form", form)
 		}
 		model.addAttribute("spot", spot)
-		model.addAttribute("sessions", sessions.map { SurfSessionView.from(it, zoneId) })
+		model.addAttribute("sessions", sessions.map { session ->
+			SurfSessionView.from(
+				session = session,
+				zoneId = zoneId,
+				tide = tideService.getCachedTideDay(spot, session.midpoint().atZone(zoneId).toLocalDate())
+					.let { TideContextView.from(it, session.midpoint(), zoneId) },
+			)
+		})
 		model.addAttribute("currentConditions", currentConditions.getOrNull()?.snapshot?.let(CurrentConditionsView::from))
 		model.addAttribute("conditionsError", currentConditions.exceptionOrNull()?.message)
+		model.addAttribute("currentTide", currentTide)
 		model.addAttribute("currentScore", currentScore?.let(CurrentScoreView::from))
 		model.addAttribute("scoreContributors", scoreContributors(currentScore, sessions))
+		model.addAttribute("scoreTideNote", scoreTideNote(currentTide))
 	}
 
 	private fun scoreContributors(score: CurrentScore?, sessions: List<SurfSession>): List<ScoreContributionView> {
@@ -103,6 +126,13 @@ class HomeController(
 			}
 		}
 	}
+
+	private fun scoreTideNote(currentTide: TideContextView?): String =
+		if (currentTide?.available == true) {
+			"La marée est affichée pour le contexte, mais elle n'influence pas encore la similarité."
+		} else {
+			"La marée est ignorée dans la similarité faute de données exploitables."
+		}
 }
 
 data class SurfSessionForm(
@@ -135,12 +165,13 @@ data class SurfSessionView(
 	val timeWindow: String,
 	val rating: Int,
 	val notes: String?,
+	val tide: TideContextView,
 ) {
 	companion object {
 		private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 		private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-		fun from(session: SurfSession, zoneId: ZoneId): SurfSessionView {
+		fun from(session: SurfSession, zoneId: ZoneId, tide: TideContextView): SurfSessionView {
 			val startsAt = session.startsAt.atZone(zoneId)
 			val endsAt = session.endsAt.atZone(zoneId)
 			return SurfSessionView(
@@ -149,8 +180,82 @@ data class SurfSessionView(
 				timeWindow = "${startsAt.format(timeFormatter)} - ${endsAt.format(timeFormatter)}",
 				rating = session.rating.value,
 				notes = session.notes,
+				tide = tide,
 			)
 		}
+	}
+}
+
+data class TideContextView(
+	val available: Boolean,
+	val waterHeight: String,
+	val phase: String,
+	val nextHighTide: String,
+	val nextLowTide: String,
+	val providerName: String,
+	val station: String?,
+	val status: String,
+) {
+	companion object {
+		private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+		fun from(cache: TideDayCache, instant: Instant, zoneId: ZoneId): TideContextView {
+			if (cache.unavailableReason != null) {
+				return unavailable(cache, messageFor(cache.unavailableReason, cache.unavailableMessage))
+			}
+
+			val point = cache.points.nearestTo(instant)
+			val previousEvent = cache.events.filter { !it.timestamp.isAfter(instant) }.maxByOrNull { it.timestamp }
+			val nextEvent = cache.events.filter { !it.timestamp.isBefore(instant) }.minByOrNull { it.timestamp }
+			val station = cache.stationName?.let { stationName ->
+				cache.stationDistanceKilometers?.let { "$stationName · ${it.format(1)} km" } ?: stationName
+			}
+
+			return TideContextView(
+				available = true,
+				waterHeight = point?.waterHeightMeters?.let { "${it.format(2)} m" } ?: "n/d",
+				phase = phaseLabel(previousEvent, nextEvent),
+				nextHighTide = cache.events.next(TideEventType.HIGH, instant)?.formatAt(zoneId) ?: "n/d",
+				nextLowTide = cache.events.next(TideEventType.LOW, instant)?.formatAt(zoneId) ?: "n/d",
+				providerName = cache.providerName,
+				station = station,
+				status = "Marée issue du cache local",
+			)
+		}
+
+		private fun unavailable(cache: TideDayCache, message: String): TideContextView =
+			TideContextView(
+				available = false,
+				waterHeight = "n/d",
+				phase = "n/d",
+				nextHighTide = "n/d",
+				nextLowTide = "n/d",
+				providerName = cache.providerName,
+				station = null,
+				status = message,
+			)
+
+		private fun messageFor(reason: TideUnavailableReason, providerMessage: String?): String =
+			when (reason) {
+				TideUnavailableReason.CACHE_MISS -> "Marée absente du cache pour cette date"
+				TideUnavailableReason.MISSING_API_KEY -> "Clé API marée absente"
+				TideUnavailableReason.QUOTA_REACHED -> "Quota marée atteint pour aujourd'hui"
+				TideUnavailableReason.PROVIDER_UNAVAILABLE -> providerMessage ?: "Provider marée indisponible"
+			}
+
+		private fun phaseLabel(previousEvent: TideEvent?, nextEvent: TideEvent?): String =
+			when {
+				previousEvent?.type == TideEventType.LOW && nextEvent?.type == TideEventType.HIGH -> "Montante"
+				previousEvent?.type == TideEventType.HIGH && nextEvent?.type == TideEventType.LOW -> "Descendante"
+				previousEvent?.type == TideEventType.HIGH -> "Après pleine mer"
+				previousEvent?.type == TideEventType.LOW -> "Après basse mer"
+				nextEvent?.type == TideEventType.HIGH -> "Avant pleine mer"
+				nextEvent?.type == TideEventType.LOW -> "Avant basse mer"
+				else -> "n/d"
+			}
+
+		private fun TideEvent.formatAt(zoneId: ZoneId): String =
+			timestamp.atZone(zoneId).format(timeFormatter)
 	}
 }
 
@@ -241,3 +346,12 @@ data class ScoreContributionView(
 
 private fun Double.format(decimals: Int): String =
 	"%.${decimals}f".format(java.util.Locale.FRANCE, this)
+
+private fun SurfSession.midpoint(): Instant =
+	startsAt.plus(Duration.between(startsAt, endsAt).dividedBy(2))
+
+private fun List<TidePoint>.nearestTo(instant: Instant): TidePoint? =
+	minByOrNull { abs(Duration.between(it.timestamp, instant).seconds) }
+
+private fun List<TideEvent>.next(type: TideEventType, instant: Instant): TideEvent? =
+	filter { it.type == type && !it.timestamp.isBefore(instant) }.minByOrNull { it.timestamp }
