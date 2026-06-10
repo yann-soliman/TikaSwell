@@ -36,8 +36,10 @@ Ne jamais committer de vraie clé API dans le dépôt, même dans un exemple.
 | `TIKASWELL_TIDE_PREFETCH_ENABLED` | Non | `true` | Active le préchargement automatique du cache marée |
 | `TIKASWELL_TIDE_PREFETCH_CRON` | Non | `0 0 3 * * *` | Horaire du préchargement quotidien Spring, par défaut 03:00 |
 | `TIKASWELL_TIDE_PREFETCH_ZONE` | Non | `Europe/Paris` | Fuseau horaire utilisé par le scheduler marée |
-| `TIKASWELL_TIDE_PREFETCH_DAYS_AHEAD` | Non | `7` | Horizon quotidien préchargé: `7` signifie aujourd'hui jusqu'à J+7 inclus |
-| `TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD` | Non | `1` | Horizon préchargé au démarrage: `1` signifie aujourd'hui et demain |
+| `TIKASWELL_TIDE_PREFETCH_DAYS_BEFORE` | Non | `30` | Horizon passé quotidien préchargé |
+| `TIKASWELL_TIDE_PREFETCH_DAYS_AHEAD` | Non | `30` | Horizon futur quotidien préchargé |
+| `TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_BEFORE` | Non | `30` | Horizon passé préchargé au démarrage |
+| `TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD` | Non | `30` | Horizon futur préchargé au démarrage |
 
 `API_MAREE_API_KEY` doit être saisie uniquement dans les variables d'environnement de
 Portainer. Elle ne doit pas être mise dans le compose, le README, une issue GitHub, un commit
@@ -45,8 +47,8 @@ ou un log.
 
 api-maree.fr est réservé au contexte de marée. Open-Meteo reste la source météo/marine principale.
 Les hauteurs de marée sont stables pour une date donnée, donc l'application précharge un cache SQLite durable.
-Au démarrage, elle précharge seulement aujourd'hui et demain par défaut. Chaque jour à 03:00,
-elle complète ensuite la fenêtre glissante jusqu'à J+7, sans récupérer les jours déjà présents
+Au démarrage, elle précharge J-30 à J+30 par défaut. Chaque jour à 03:00,
+elle complète ensuite cette fenêtre glissante, sans récupérer les jours déjà présents
 en cache.
 
 ## Marée, Cache Et Limites
@@ -58,8 +60,8 @@ Comportement attendu :
 
 - au rendu du dashboard, l'application lit le cache et n'appelle pas api-maree.fr ;
 - au calcul du score, l'application lit le cache et n'appelle pas api-maree.fr ;
-- au démarrage, le scheduler précharge aujourd'hui et demain par défaut ;
-- chaque jour à 03:00, le scheduler complète la fenêtre aujourd'hui -> J+7 ;
+- au démarrage, le scheduler précharge J-30 -> J+30 par défaut ;
+- chaque jour à 03:00, le scheduler complète la fenêtre J-30 -> J+30 ;
 - après chaque préchargement, le scheduler tente aussi de backfiller les dates passées des
   sessions enregistrées, dans la limite du quota restant ;
 - si une journée est déjà en cache avec des hauteurs exploitables, elle n'est pas refetchée ;
@@ -118,8 +120,10 @@ TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY=120
 TIKASWELL_TIDE_PREFETCH_ENABLED=true
 TIKASWELL_TIDE_PREFETCH_CRON=0 0 3 * * *
 TIKASWELL_TIDE_PREFETCH_ZONE=Europe/Paris
-TIKASWELL_TIDE_PREFETCH_DAYS_AHEAD=7
-TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD=1
+TIKASWELL_TIDE_PREFETCH_DAYS_BEFORE=30
+TIKASWELL_TIDE_PREFETCH_DAYS_AHEAD=30
+TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_BEFORE=30
+TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD=30
 ```
 
 Pour `API_MAREE_API_KEY`, remplacer la valeur vide directement dans Portainer par la vraie
@@ -140,8 +144,10 @@ TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY=120
 TIKASWELL_TIDE_PREFETCH_ENABLED=true
 TIKASWELL_TIDE_PREFETCH_CRON=0 0 3 * * *
 TIKASWELL_TIDE_PREFETCH_ZONE=Europe/Paris
-TIKASWELL_TIDE_PREFETCH_DAYS_AHEAD=7
-TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD=1
+TIKASWELL_TIDE_PREFETCH_DAYS_BEFORE=30
+TIKASWELL_TIDE_PREFETCH_DAYS_AHEAD=30
+TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_BEFORE=30
+TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD=30
 ```
 
 4. Redéployer la stack ou recréer le conteneur applicatif.

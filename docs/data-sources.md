@@ -78,6 +78,7 @@ Constraints:
 Implementation notes:
 
 - Fetch water levels for the configured tide site, initially `saint-nazaire` for the Ermitage spot.
+- Cache the useful api-maree.fr window from J-30 to J+30 by default.
 - Store provider metadata separately from the canonical tide fields so the domain stays provider-neutral.
 - Keep buoy integrations out of scope until the tide workflow is validated.
 

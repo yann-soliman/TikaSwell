@@ -47,6 +47,22 @@ class TidePrefetchSchedulerTests {
 	}
 
 	@Test
+	fun `scheduler prefetches configured past and future dates`() {
+		val provider = RecordingTideProvider()
+		val scheduler = scheduler(provider)
+
+		scheduler.prefetchWindow(daysBefore = 2, daysAhead = 2, trigger = "test")
+
+		assertThat(provider.fetchedDates).containsExactly(
+			LocalDate.parse("2026-06-02"),
+			LocalDate.parse("2026-06-03"),
+			LocalDate.parse("2026-06-04"),
+			LocalDate.parse("2026-06-05"),
+			LocalDate.parse("2026-06-06"),
+		)
+	}
+
+	@Test
 	fun `scheduler relies on tide service cache-first behavior`() {
 		val provider = RecordingTideProvider()
 		val cacheRepository = InMemoryTideCacheRepository().apply {
@@ -86,6 +102,19 @@ class TidePrefetchSchedulerTests {
 	}
 
 	@Test
+	fun `scheduler ignores historical session dates outside provider window`() {
+		val provider = RecordingTideProvider()
+		val sessionRepository = InMemorySurfSessionRepository().apply {
+			save(session(Instant.parse("2026-04-20T16:30:00Z"), Instant.parse("2026-04-20T18:30:00Z")))
+		}
+		val scheduler = scheduler(provider, sessionRepository = sessionRepository)
+
+		scheduler.backfillHistoricalSessions(trigger = "test")
+
+		assertThat(provider.fetchedDates).isEmpty()
+	}
+
+	@Test
 	fun `scheduler does not backfill today session covered by regular window`() {
 		val provider = RecordingTideProvider()
 		val sessionRepository = InMemorySurfSessionRepository().apply {
@@ -111,8 +140,10 @@ class TidePrefetchSchedulerTests {
 				properties = TideProperties(
 					maxProviderCallsPerDay = 6,
 					prefetch = TidePrefetchProperties(
-						daysAhead = 7,
-						startupDaysAhead = 1,
+						daysBefore = 30,
+						daysAhead = 30,
+						startupDaysBefore = 30,
+						startupDaysAhead = 30,
 						zone = "Europe/Paris",
 					),
 				),
@@ -125,8 +156,10 @@ class TidePrefetchSchedulerTests {
 			properties = TideProperties(
 				maxProviderCallsPerDay = 6,
 				prefetch = TidePrefetchProperties(
-					daysAhead = 7,
-					startupDaysAhead = 1,
+					daysBefore = 30,
+					daysAhead = 30,
+					startupDaysBefore = 30,
+					startupDaysAhead = 30,
 					zone = "Europe/Paris",
 				),
 			),

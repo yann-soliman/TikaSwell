@@ -28,28 +28,33 @@ class TidePrefetchScheduler(
 ) {
 	@EventListener(ApplicationReadyEvent::class)
 	fun prefetchShortWindowOnStartup() {
-		prefetchWindow(properties.prefetch.startupDaysAhead, "démarrage")
+		prefetchWindow(properties.prefetch.startupDaysBefore, properties.prefetch.startupDaysAhead, "démarrage")
 		backfillHistoricalSessions("démarrage")
 	}
 
 	@Scheduled(cron = "\${tikaswell.tide.prefetch.cron}", zone = "\${tikaswell.tide.prefetch.zone}")
 	fun prefetchDailyWindow() {
-		prefetchWindow(properties.prefetch.daysAhead, "planification quotidienne")
+		prefetchWindow(properties.prefetch.daysBefore, properties.prefetch.daysAhead, "planification quotidienne")
 		backfillHistoricalSessions("planification quotidienne")
 	}
 
 	fun prefetchWindow(daysAhead: Int, trigger: String) {
+		prefetchWindow(daysBefore = 0, daysAhead = daysAhead, trigger = trigger)
+	}
+
+	fun prefetchWindow(daysBefore: Int, daysAhead: Int, trigger: String) {
 		val spot = spotProvider.initialSpot()
 		val today = LocalDate.now(clock.withZone(ZoneId.of(properties.prefetch.zone)))
 		logger.info(
-			"Préchargement marée {} pour le spot {} de {} à J+{}",
+			"Préchargement marée {} pour le spot {} de J-{} à J+{} autour de {}",
 			trigger,
 			spot.id.value,
-			today,
+			daysBefore,
 			daysAhead,
+			today,
 		)
 
-		for (offset in 0..daysAhead) {
+		for (offset in -daysBefore..daysAhead) {
 			val date = today.plusDays(offset.toLong())
 			val tide = tideService.prefetchTideDay(spot, date)
 			if (tide.unavailableReason != null) {
@@ -70,9 +75,10 @@ class TidePrefetchScheduler(
 	fun backfillHistoricalSessions(trigger: String) {
 		val spot = spotProvider.initialSpot()
 		val today = LocalDate.now(clock.withZone(ZoneId.of(properties.prefetch.zone)))
+		val earliestSupportedDate = today.minusDays(properties.prefetch.daysBefore.toLong())
 		val dates = surfSessionRepository.findBySpotId(spot.id)
 			.map { it.midpoint().atZone(ZoneId.of(properties.prefetch.zone)).toLocalDate() }
-			.filter { it.isBefore(today) }
+			.filter { it in earliestSupportedDate..<today }
 			.distinct()
 			.sortedDescending()
 

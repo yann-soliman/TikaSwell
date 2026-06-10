@@ -69,8 +69,10 @@ Useful cache and prefetch variables:
 - `TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY`: application-side daily quota, defaults to `120`.
 - `TIKASWELL_TIDE_PREFETCH_ENABLED`: enables automatic prefetch, defaults to `true`.
 - `TIKASWELL_TIDE_PREFETCH_CRON`: Spring cron for daily prefetch, defaults to `0 0 3 * * *`.
-- `TIKASWELL_TIDE_PREFETCH_DAYS_AHEAD`: daily horizon, `7` means today through D+7.
-- `TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD`: startup horizon, `1` means today and tomorrow.
+- `TIKASWELL_TIDE_PREFETCH_DAYS_BEFORE`: daily past horizon, defaults to `30`.
+- `TIKASWELL_TIDE_PREFETCH_DAYS_AHEAD`: daily future horizon, defaults to `30`.
+- `TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_BEFORE`: startup past horizon, defaults to `30`.
+- `TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD`: startup future horizon, defaults to `30`.
 
 The strategy is deliberately conservative: cache-first reads, daily prefetch at 03:00, durable
 SQLite cache by spot/date/provider, and no short automatic expiry. Tide data can remain unavailable

@@ -37,5 +37,7 @@ tikaswell:
       enabled: ${TIKASWELL_TIDE_PREFETCH_ENABLED:true}
       cron: "${TIKASWELL_TIDE_PREFETCH_CRON:0 0 3 * * *}"
       zone: ${TIKASWELL_TIDE_PREFETCH_ZONE:Europe/Paris}
-      days-ahead: ${TIKASWELL_TIDE_PREFETCH_DAYS_AHEAD:7}
-      startup-days-ahead: ${TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD:1}
+      days-before: ${TIKASWELL_TIDE_PREFETCH_DAYS_BEFORE:30}
+      days-ahead: ${TIKASWELL_TIDE_PREFETCH_DAYS_AHEAD:30}
+      startup-days-before: ${TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_BEFORE:30}
+      startup-days-ahead: ${TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD:30}

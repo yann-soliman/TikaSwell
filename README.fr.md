@@ -69,8 +69,10 @@ Variables utiles pour le cache et le préchargement :
 - `TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY` : quota applicatif quotidien, `120` par défaut.
 - `TIKASWELL_TIDE_PREFETCH_ENABLED` : active le préchargement automatique, `true` par défaut.
 - `TIKASWELL_TIDE_PREFETCH_CRON` : horaire Spring du préchargement quotidien, `0 0 3 * * *`.
-- `TIKASWELL_TIDE_PREFETCH_DAYS_AHEAD` : horizon quotidien, `7` signifie aujourd'hui jusqu'à J+7.
-- `TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD` : horizon au démarrage, `1` signifie aujourd'hui et demain.
+- `TIKASWELL_TIDE_PREFETCH_DAYS_BEFORE` : horizon passé quotidien, `30` par défaut.
+- `TIKASWELL_TIDE_PREFETCH_DAYS_AHEAD` : horizon futur quotidien, `30` par défaut.
+- `TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_BEFORE` : horizon passé au démarrage, `30` par défaut.
+- `TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD` : horizon futur au démarrage, `30` par défaut.
 
 La stratégie est volontairement prudente : lecture cache-first, préchargement quotidien à 03:00,
 cache SQLite durable par spot/date/provider, et pas d'expiration automatique courte. La marée peut
