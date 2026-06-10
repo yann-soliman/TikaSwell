@@ -112,7 +112,7 @@ class HomeController(
 		model.addAttribute("currentTide", currentTide)
 		model.addAttribute("currentScore", currentScore?.let(CurrentScoreView::from))
 		model.addAttribute("scoreContributors", scoreContributors(currentScore, sessions))
-		model.addAttribute("scoreTideNote", scoreTideNote(currentTide))
+		model.addAttribute("scoreTideNote", scoreTideNote(currentScore, currentTide))
 	}
 
 	private fun scoreContributors(score: CurrentScore?, sessions: List<SurfSession>): List<ScoreContributionView> {
@@ -127,11 +127,11 @@ class HomeController(
 		}
 	}
 
-	private fun scoreTideNote(currentTide: TideContextView?): String =
-		if (currentTide?.available == true) {
-			"La marée est affichée pour le contexte, mais elle n'influence pas encore la similarité."
-		} else {
-			"La marée est ignorée dans la similarité faute de données exploitables."
+	private fun scoreTideNote(currentScore: CurrentScore?, currentTide: TideContextView?): String =
+		when {
+			currentScore?.tideUsed == true -> "La marée influence la similarité : hauteur d'eau, phase et distance aux pleine/basse mers sont comparées."
+			currentTide?.available == true -> "La marée est disponible, mais ignorée faute de données historiques comparables."
+			else -> "La marée est ignorée dans la similarité faute de données exploitables."
 		}
 }
 
@@ -318,6 +318,7 @@ data class CurrentScoreView(
 	val score: String,
 	val confidence: String,
 	val hasScore: Boolean,
+	val tideUsed: Boolean,
 ) {
 	companion object {
 		fun from(score: CurrentScore): CurrentScoreView =
@@ -325,6 +326,7 @@ data class CurrentScoreView(
 				score = score.score?.format(1) ?: "Pas assez d'historique",
 				confidence = "${(score.confidence * 100).format(0)} %",
 				hasScore = score.score != null,
+				tideUsed = score.tideUsed,
 			)
 	}
 }

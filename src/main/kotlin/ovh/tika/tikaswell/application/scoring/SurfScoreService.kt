@@ -2,6 +2,7 @@ package ovh.tika.tikaswell.application.scoring
 
 import ovh.tika.tikaswell.application.conditions.ConditionSnapshotRepository
 import ovh.tika.tikaswell.application.session.SurfSessionRepository
+import ovh.tika.tikaswell.application.tide.TideSnapshotLookup
 import ovh.tika.tikaswell.domain.ConditionSnapshot
 import ovh.tika.tikaswell.domain.CurrentConditions
 import ovh.tika.tikaswell.domain.CurrentScore
@@ -9,8 +10,11 @@ import ovh.tika.tikaswell.domain.Direction
 import ovh.tika.tikaswell.domain.ScoreContribution
 import ovh.tika.tikaswell.domain.SessionConditionSnapshot
 import ovh.tika.tikaswell.domain.SurfSessionId
+import ovh.tika.tikaswell.domain.TidePhase
+import ovh.tika.tikaswell.domain.TideSnapshot
 import org.springframework.stereotype.Service
 import java.time.Clock
+import java.time.Duration
 import java.time.Instant
 import kotlin.math.PI
 import kotlin.math.abs
@@ -24,13 +28,15 @@ import kotlin.math.sin
 class SurfScoreService(
 	private val conditionSnapshotRepository: ConditionSnapshotRepository,
 	private val surfSessionRepository: SurfSessionRepository,
+	private val tideSnapshotLookup: TideSnapshotLookup,
 	private val clock: Clock,
 ) {
 	fun score(currentConditions: CurrentConditions): CurrentScore {
-		val currentVector = ConditionVector.from(listOf(currentConditions.snapshot))
+		val currentTide = tideSnapshotLookup.snapshotAt(currentConditions.spot, currentConditions.snapshot.timestamp)
+		val currentVector = ConditionVector.from(listOf(currentConditions.snapshot), currentTide)
 		val contributors = conditionSnapshotRepository.findBySpotId(currentConditions.spot.id)
 			.groupBy { it.sessionId }
-			.mapNotNull { (sessionId, snapshots) -> contributionFor(sessionId, snapshots, currentVector) }
+			.mapNotNull { (sessionId, snapshots) -> contributionFor(sessionId, snapshots, currentConditions, currentVector) }
 			.filter { it.similarity > 0.0 }
 			.sortedByDescending { it.similarity }
 			.take(MAX_CONTRIBUTORS)
@@ -41,6 +47,7 @@ class SurfScoreService(
 				confidence = 0.0,
 				contributors = emptyList(),
 				computedAt = clock.instant(),
+				tideUsed = false,
 			)
 		}
 
@@ -53,22 +60,28 @@ class SurfScoreService(
 			confidence = confidence.coerceIn(0.0, 1.0).roundToSingleDecimal(),
 			contributors = contributors,
 			computedAt = clock.instant(),
+			tideUsed = contributors.any { it.tideUsed },
 		)
 	}
 
 	private fun contributionFor(
 		sessionId: SurfSessionId,
 		snapshots: List<SessionConditionSnapshot>,
+		currentConditions: CurrentConditions,
 		currentVector: ConditionVector,
 	): ScoreContribution? {
 		val session = surfSessionRepository.findById(sessionId) ?: return null
-		val historicalVector = ConditionVector.from(snapshots.map { it.snapshot })
+		val historicalSnapshots = snapshots.map { it.snapshot }.sortedBy { it.timestamp }
+		val historicalTimestamp = historicalSnapshots[historicalSnapshots.size / 2].timestamp
+		val historicalTide = tideSnapshotLookup.snapshotAt(currentConditions.spot, historicalTimestamp)
+		val historicalVector = ConditionVector.from(historicalSnapshots, historicalTide)
 		val similarity = currentVector.similarityTo(historicalVector)
 
 		return ScoreContribution(
 			sessionId = session.id!!,
 			rating = session.rating,
-			similarity = similarity.roundToSingleDecimal(),
+			similarity = similarity.value.roundToSingleDecimal(),
+			tideUsed = similarity.tideUsed,
 		)
 	}
 
@@ -85,8 +98,9 @@ private data class ConditionVector(
 	val waveHeightMeters: Double?,
 	val wavePeriodSeconds: Double?,
 	val waveDirection: Direction?,
+	val tide: TideVector?,
 ) {
-	fun similarityTo(other: ConditionVector): Double {
+	fun similarityTo(other: ConditionVector): SimilarityResult {
 		val differences = buildList {
 			// Poids volontairement simples et lisibles : les vagues comptent plus que la rafale isolée.
 			weightedDifference(windSpeedKmh, other.windSpeedKmh, scale = 40.0, weight = 1.4)?.let(::add)
@@ -95,32 +109,38 @@ private data class ConditionVector(
 			weightedDifference(waveHeightMeters, other.waveHeightMeters, scale = 4.0, weight = 2.0)?.let(::add)
 			weightedDifference(wavePeriodSeconds, other.wavePeriodSeconds, scale = 20.0, weight = 1.5)?.let(::add)
 			directionDifference(waveDirection, other.waveDirection, weight = 1.0)?.let(::add)
+			tide?.differencesTo(other.tide)?.let(::addAll)
 		}
 
 		if (differences.isEmpty()) {
-			return 0.0
+			return SimilarityResult(value = 0.0, tideUsed = false)
 		}
 
 		val weightedDistance = differences.sumOf { it.distance * it.weight } / differences.sumOf { it.weight }
-		return (1.0 - weightedDistance).coerceIn(0.0, 1.0)
+		return SimilarityResult(
+			value = (1.0 - weightedDistance).coerceIn(0.0, 1.0),
+			tideUsed = differences.any { it.source == DifferenceSource.TIDE },
+		)
 	}
 
-	private data class WeightedDifference(
-		val distance: Double,
-		val weight: Double,
+	data class SimilarityResult(
+		val value: Double,
+		val tideUsed: Boolean,
 	)
 
 	companion object {
-		fun from(snapshots: List<ConditionSnapshot>): ConditionVector {
+		fun from(snapshots: List<ConditionSnapshot>, tideSnapshot: TideSnapshot?): ConditionVector {
 			require(snapshots.isNotEmpty()) { "Au moins un snapshot est nécessaire pour construire un vecteur" }
+			val sortedSnapshots = snapshots.sortedBy { it.timestamp }
 			return ConditionVector(
-				timestamp = snapshots[snapshots.size / 2].timestamp,
-				windSpeedKmh = snapshots.map { it.windSpeedKmh }.averageOrNull(),
-				windGustKmh = snapshots.mapNotNull { it.windGustKmh }.averageOrNull(),
-				windDirection = snapshots.mapNotNull { it.windDirection }.averageDirection(),
-				waveHeightMeters = snapshots.mapNotNull { it.waveHeightMeters }.averageOrNull(),
-				wavePeriodSeconds = snapshots.mapNotNull { it.wavePeriodSeconds }.averageOrNull(),
-				waveDirection = snapshots.mapNotNull { it.waveDirection }.averageDirection(),
+				timestamp = sortedSnapshots[sortedSnapshots.size / 2].timestamp,
+				windSpeedKmh = sortedSnapshots.map { it.windSpeedKmh }.averageOrNull(),
+				windGustKmh = sortedSnapshots.mapNotNull { it.windGustKmh }.averageOrNull(),
+				windDirection = sortedSnapshots.mapNotNull { it.windDirection }.averageDirection(),
+				waveHeightMeters = sortedSnapshots.mapNotNull { it.waveHeightMeters }.averageOrNull(),
+				wavePeriodSeconds = sortedSnapshots.mapNotNull { it.wavePeriodSeconds }.averageOrNull(),
+				waveDirection = sortedSnapshots.mapNotNull { it.waveDirection }.averageDirection(),
+				tide = tideSnapshot?.let(TideVector::from),
 			)
 		}
 
@@ -131,6 +151,7 @@ private data class ConditionVector(
 			return WeightedDifference(
 				distance = min(1.0, abs(left - right) / scale),
 				weight = weight,
+				source = DifferenceSource.WEATHER,
 			)
 		}
 
@@ -143,10 +164,80 @@ private data class ConditionVector(
 			return WeightedDifference(
 				distance = shortest / 180.0,
 				weight = weight,
+				source = DifferenceSource.WEATHER,
 			)
 		}
 	}
 }
+
+private data class TideVector(
+	val waterHeightMeters: Double?,
+	val phase: TidePhase?,
+	val minutesToNearestHighTide: Double?,
+	val minutesToNearestLowTide: Double?,
+) {
+	fun differencesTo(other: TideVector?): List<WeightedDifference> {
+		if (other == null) {
+			return emptyList()
+		}
+		return buildList {
+			weightedTideDifference(waterHeightMeters, other.waterHeightMeters, scale = 4.0, weight = 1.2)?.let(::add)
+			phaseDifference(phase, other.phase, weight = 0.8)?.let(::add)
+			weightedTideDifference(minutesToNearestHighTide, other.minutesToNearestHighTide, scale = 360.0, weight = 0.8)?.let(::add)
+			weightedTideDifference(minutesToNearestLowTide, other.minutesToNearestLowTide, scale = 360.0, weight = 0.8)?.let(::add)
+		}
+	}
+
+	companion object {
+		fun from(snapshot: TideSnapshot): TideVector =
+			TideVector(
+				waterHeightMeters = snapshot.waterHeightMeters,
+				phase = snapshot.phase,
+				minutesToNearestHighTide = nearestMinutes(snapshot.timeSincePreviousHighTide, snapshot.timeUntilNextHighTide),
+				minutesToNearestLowTide = nearestMinutes(snapshot.timeSincePreviousLowTide, snapshot.timeUntilNextLowTide),
+			)
+	}
+}
+
+private enum class DifferenceSource {
+	WEATHER,
+	TIDE,
+}
+
+private data class WeightedDifference(
+	val distance: Double,
+	val weight: Double,
+	val source: DifferenceSource,
+)
+
+private fun weightedTideDifference(left: Double?, right: Double?, scale: Double, weight: Double): WeightedDifference? {
+	if (left == null || right == null) {
+		return null
+	}
+	return WeightedDifference(
+		distance = min(1.0, abs(left - right) / scale),
+		weight = weight,
+		source = DifferenceSource.TIDE,
+	)
+}
+
+private fun phaseDifference(left: TidePhase?, right: TidePhase?, weight: Double): WeightedDifference? {
+	if (left == null || right == null || left == TidePhase.UNKNOWN || right == TidePhase.UNKNOWN) {
+		return null
+	}
+	val distance = if (left == right) 0.0 else 1.0
+	return WeightedDifference(
+		distance = distance,
+		weight = weight,
+		source = DifferenceSource.TIDE,
+	)
+}
+
+private fun nearestMinutes(previous: Duration?, next: Duration?): Double? =
+	listOfNotNull(previous, next)
+		.minOrNull()
+		?.toMinutes()
+		?.toDouble()
 
 private fun List<Double>.averageOrNull(): Double? =
 	if (isEmpty()) null else average()

@@ -101,7 +101,7 @@ class HomeControllerTests {
 			.andExpect(content().string(containsString("12:40")))
 			.andExpect(content().string(containsString("18:55")))
 			.andExpect(content().string(containsString("Saint-Nazaire · 12,4 km")))
-			.andExpect(content().string(containsString("La marée est affichée pour le contexte, mais elle n&#39;influence pas encore la similarité.")))
+			.andExpect(content().string(containsString("La marée est disponible, mais ignorée faute de données historiques comparables.")))
 	}
 
 	@Test
@@ -198,6 +198,7 @@ class HomeControllerTests {
 			.andExpect(content().string(containsString("Avec marée en cache")))
 			.andExpect(content().string(containsString("3,25 m · Montante")))
 			.andExpect(content().string(containsString("12:40 / 18:55")))
+			.andExpect(content().string(containsString("La marée influence la similarité")))
 	}
 
 	private fun availableTideCache(date: LocalDate, stationName: String = "Saint-Nazaire"): TideDayCache =

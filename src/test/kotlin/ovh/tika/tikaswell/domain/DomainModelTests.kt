@@ -77,6 +77,7 @@ class DomainModelTests {
 				confidence = 1.2,
 				contributors = emptyList(),
 				computedAt = Instant.parse("2026-06-04T10:00:00Z"),
+				tideUsed = false,
 			)
 		}
 

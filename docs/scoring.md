@@ -22,7 +22,33 @@ score from the nearest similar sessions.
 - average wave period
 - average wave direction
 - session time of day
-- future tide-related features when available
+- tide water height when available
+- tide phase when available
+- time distance to high tide when available
+- time distance to low tide when available
+
+## Current Weights
+
+Weather and marine features:
+
+- wind speed: `1.4`, scaled over `40 km/h`
+- wind gust: `0.6`, scaled over `60 km/h`
+- wind direction: `1.2`, scaled over `180°`
+- wave height: `2.0`, scaled over `4 m`
+- wave period: `1.5`, scaled over `20 s`
+- wave direction: `1.0`, scaled over `180°`
+
+Tide features are optional. They are used only when both the current conditions and a historical
+session have usable tide data in the local cache:
+
+- water height: `1.2`, scaled over `4 m`
+- tide phase: `0.8`, exact match or mismatch between rising/falling
+- time to nearest high tide: `0.8`, scaled over `360 min`
+- time to nearest low tide: `0.8`, scaled over `360 min`
+
+If tide data is missing on either side, tide features are ignored for that comparison instead of
+penalizing the session arbitrarily. The scoring code must never call the tide provider directly;
+it reads only canonical tide snapshots derived from the local cache.
 
 ## Constraints
 

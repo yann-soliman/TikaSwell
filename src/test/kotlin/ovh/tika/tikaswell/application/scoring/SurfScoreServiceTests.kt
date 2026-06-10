@@ -2,6 +2,7 @@ package ovh.tika.tikaswell.application.scoring
 
 import ovh.tika.tikaswell.application.conditions.ConditionSnapshotRepository
 import ovh.tika.tikaswell.application.session.SurfSessionRepository
+import ovh.tika.tikaswell.application.tide.TideSnapshotLookup
 import ovh.tika.tikaswell.domain.ConditionSnapshot
 import ovh.tika.tikaswell.domain.CurrentConditions
 import ovh.tika.tikaswell.domain.Direction
@@ -11,9 +12,12 @@ import ovh.tika.tikaswell.domain.Spot
 import ovh.tika.tikaswell.domain.SpotId
 import ovh.tika.tikaswell.domain.SurfSession
 import ovh.tika.tikaswell.domain.SurfSessionId
+import ovh.tika.tikaswell.domain.TidePhase
+import ovh.tika.tikaswell.domain.TideSnapshot
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.Clock
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset
 
@@ -32,6 +36,7 @@ class SurfScoreServiceTests {
 		val service = SurfScoreService(
 			conditionSnapshotRepository = InMemoryConditionSnapshotRepository(),
 			surfSessionRepository = InMemorySurfSessionRepository(),
+			tideSnapshotLookup = NoopTideSnapshotLookup(),
 			clock = clock,
 		)
 
@@ -46,7 +51,7 @@ class SurfScoreServiceTests {
 	fun `score uses nearest historical sessions and exposes contributors`() {
 		val sessions = InMemorySurfSessionRepository()
 		val snapshots = InMemoryConditionSnapshotRepository()
-		val service = SurfScoreService(snapshots, sessions, clock)
+		val service = SurfScoreService(snapshots, sessions, NoopTideSnapshotLookup(), clock)
 
 		val goodSession = sessions.save(session(rating = 9))
 		val badSession = sessions.save(session(rating = 3))
@@ -59,6 +64,46 @@ class SurfScoreServiceTests {
 		assertThat(score.score!!).isGreaterThan(6.0)
 		assertThat(score.contributors.first().sessionId).isEqualTo(goodSession.id)
 		assertThat(score.contributors.first().similarity).isGreaterThan(score.contributors.last().similarity)
+		assertThat(score.tideUsed).isFalse()
+	}
+
+	@Test
+	fun `score uses tide features when current and historical tides are available`() {
+		val sessions = InMemorySurfSessionRepository()
+		val snapshots = InMemoryConditionSnapshotRepository()
+		val tideLookup = InMemoryTideSnapshotLookup()
+		val service = SurfScoreService(snapshots, sessions, tideLookup, clock)
+
+		val matchingTideSession = sessions.save(session(rating = 9))
+		val oppositeTideSession = sessions.save(session(rating = 3))
+		val currentSnapshot = currentSnapshot(timestamp = Instant.parse("2026-06-04T10:00:00Z"))
+		snapshots.saveForSession(matchingTideSession.id!!, currentSnapshot(timestamp = Instant.parse("2026-06-04T10:00:00Z")))
+		snapshots.saveForSession(oppositeTideSession.id!!, currentSnapshot(timestamp = Instant.parse("2026-06-04T16:00:00Z")))
+		tideLookup.save(tideSnapshot(timestamp = Instant.parse("2026-06-04T10:00:00Z"), waterHeightMeters = 3.2, phase = TidePhase.RISING))
+		tideLookup.save(tideSnapshot(timestamp = Instant.parse("2026-06-04T16:00:00Z"), waterHeightMeters = 0.7, phase = TidePhase.FALLING))
+
+		val score = service.score(CurrentConditions(spot, clock.instant(), currentSnapshot))
+
+		assertThat(score.tideUsed).isTrue()
+		assertThat(score.contributors.first().sessionId).isEqualTo(matchingTideSession.id)
+		assertThat(score.contributors.first().tideUsed).isTrue()
+		assertThat(score.contributors.first().similarity).isGreaterThan(score.contributors.last().similarity)
+	}
+
+	@Test
+	fun `score ignores tide features when tide is missing on one side`() {
+		val sessions = InMemorySurfSessionRepository()
+		val snapshots = InMemoryConditionSnapshotRepository()
+		val tideLookup = InMemoryTideSnapshotLookup()
+		val service = SurfScoreService(snapshots, sessions, tideLookup, clock)
+
+		val session = sessions.save(session(rating = 8))
+		snapshots.saveForSession(session.id!!, currentSnapshot(timestamp = Instant.parse("2026-06-04T10:00:00Z")))
+
+		val score = service.score(CurrentConditions(spot, clock.instant(), currentSnapshot(timestamp = Instant.parse("2026-06-04T10:00:00Z"))))
+
+		assertThat(score.score).isNotNull()
+		assertThat(score.tideUsed).isFalse()
 	}
 
 	private fun session(rating: Int): SurfSession =
@@ -74,10 +119,11 @@ class SurfScoreServiceTests {
 	private fun currentSnapshot(
 		windSpeedKmh: Double = 15.0,
 		waveHeightMeters: Double = 1.0,
+		timestamp: Instant = Instant.parse("2026-06-04T10:00:00Z"),
 	): ConditionSnapshot =
 		ConditionSnapshot(
 			spotId = spot.id,
-			timestamp = Instant.parse("2026-06-04T10:00:00Z"),
+			timestamp = timestamp,
 			windSpeedKmh = windSpeedKmh,
 			windGustKmh = 22.0,
 			windDirection = Direction(265),
@@ -86,6 +132,43 @@ class SurfScoreServiceTests {
 			waveDirection = Direction(245),
 			providerName = "Open-Meteo",
 		)
+
+	private fun tideSnapshot(
+		timestamp: Instant,
+		waterHeightMeters: Double,
+		phase: TidePhase,
+	): TideSnapshot =
+		TideSnapshot(
+			spotId = spot.id,
+			timestamp = timestamp,
+			waterHeightMeters = waterHeightMeters,
+			phase = phase,
+			previousHighTide = null,
+			previousLowTide = null,
+			nextHighTide = null,
+			nextLowTide = null,
+			timeSincePreviousHighTide = Duration.ofHours(2),
+			timeSincePreviousLowTide = Duration.ofHours(4),
+			timeUntilNextHighTide = Duration.ofHours(3),
+			timeUntilNextLowTide = Duration.ofHours(5),
+			coefficient = null,
+			providerName = "Stormglass",
+		)
+}
+
+private class NoopTideSnapshotLookup : TideSnapshotLookup {
+	override fun snapshotAt(spot: Spot, instant: Instant): TideSnapshot? = null
+}
+
+private class InMemoryTideSnapshotLookup : TideSnapshotLookup {
+	private val snapshots = mutableMapOf<Instant, TideSnapshot>()
+
+	fun save(snapshot: TideSnapshot) {
+		snapshots[snapshot.timestamp] = snapshot
+	}
+
+	override fun snapshotAt(spot: Spot, instant: Instant): TideSnapshot? =
+		snapshots[instant]
 }
 
 private class InMemorySurfSessionRepository : SurfSessionRepository {
