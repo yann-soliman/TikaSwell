@@ -29,6 +29,7 @@ Ne jamais committer de vraie clé API dans le dépôt, même dans un exemple.
 | `OPEN_METEO_MARINE_BASE_URL` | Non | `https://marine-api.open-meteo.com` | API marine Open-Meteo |
 | `TIKASWELL_CONDITIONS_BACKFILL_ENABLED` | Non | `true` | Active la réparation des conditions historiques manquantes |
 | `TIKASWELL_CONDITIONS_BACKFILL_DAYS_BEFORE` | Non | `30` | Fenêtre passée Open-Meteo réparée pour les sessions |
+| `TIKASWELL_CONDITIONS_BACKFILL_CRON` | Non | `0 30 3 * * *` | Horaire quotidien du backfill conditions, par défaut 03:30 |
 | `TIKASWELL_CONDITIONS_BACKFILL_ZONE` | Non | `Europe/Paris` | Fuseau horaire de la fenêtre de backfill conditions |
 | `API_MAREE_BASE_URL` | Non | `https://api-maree.fr` | API marée |
 | `API_MAREE_API_KEY` | Oui pour la marée | valeur privée saisie dans Portainer | Clé API api-maree.fr, jamais dans Git |
@@ -88,9 +89,9 @@ Limites connues :
 
 ## Conditions Historiques Open-Meteo
 
-À chaque démarrage, l'application cherche les sessions passées dans la fenêtre `J-30 -> hier`
-qui n'ont pas encore de snapshots météo/marine en base. Pour ces sessions uniquement, elle appelle
-Open-Meteo en historique, puis stocke les snapshots dans SQLite.
+À chaque démarrage puis chaque jour à 03:30, l'application cherche les sessions passées dans la
+fenêtre `J-30 -> hier` qui n'ont pas encore de snapshots météo/marine en base. Pour ces sessions
+uniquement, elle appelle Open-Meteo en historique, puis stocke les snapshots dans SQLite.
 
 Ce backfill est idempotent :
 
@@ -128,6 +129,7 @@ OPEN_METEO_WEATHER_BASE_URL=https://api.open-meteo.com
 OPEN_METEO_MARINE_BASE_URL=https://marine-api.open-meteo.com
 TIKASWELL_CONDITIONS_BACKFILL_ENABLED=true
 TIKASWELL_CONDITIONS_BACKFILL_DAYS_BEFORE=30
+TIKASWELL_CONDITIONS_BACKFILL_CRON=0 30 3 * * *
 TIKASWELL_CONDITIONS_BACKFILL_ZONE=Europe/Paris
 API_MAREE_BASE_URL=https://api-maree.fr
 API_MAREE_API_KEY=

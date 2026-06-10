@@ -20,6 +20,12 @@ tikaswell:
   open-meteo:
     weather-base-url: http://localhost/weather-test
     marine-base-url: http://localhost/marine-test
+  conditions:
+    backfill:
+      enabled: true
+      days-before: 30
+      cron: "0 30 3 * * *"
+      zone: Europe/Paris
   api-maree:
     base-url: http://localhost/api-maree-test
     api-key:

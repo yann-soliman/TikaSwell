@@ -29,6 +29,7 @@ tikaswell:
     backfill:
       enabled: ${TIKASWELL_CONDITIONS_BACKFILL_ENABLED:true}
       days-before: ${TIKASWELL_CONDITIONS_BACKFILL_DAYS_BEFORE:30}
+      cron: "${TIKASWELL_CONDITIONS_BACKFILL_CRON:0 30 3 * * *}"
       zone: ${TIKASWELL_CONDITIONS_BACKFILL_ZONE:Europe/Paris}
   api-maree:
     base-url: ${API_MAREE_BASE_URL:https://api-maree.fr}

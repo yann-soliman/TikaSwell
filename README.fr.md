@@ -68,6 +68,7 @@ Variables utiles pour le cache et le préchargement :
 
 - `TIKASWELL_CONDITIONS_BACKFILL_ENABLED` : répare au démarrage les snapshots historiques Open-Meteo manquants, `true` par défaut.
 - `TIKASWELL_CONDITIONS_BACKFILL_DAYS_BEFORE` : fenêtre de réparation historique, `30` par défaut.
+- `TIKASWELL_CONDITIONS_BACKFILL_CRON` : horaire quotidien de réparation historique, `0 30 3 * * *` par défaut.
 - `TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY` : quota applicatif quotidien, `120` par défaut.
 - `TIKASWELL_TIDE_PREFETCH_ENABLED` : active le préchargement automatique, `true` par défaut.
 - `TIKASWELL_TIDE_PREFETCH_CRON` : horaire Spring du préchargement quotidien, `0 0 3 * * *`.

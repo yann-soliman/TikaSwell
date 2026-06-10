@@ -14,10 +14,12 @@ import java.time.ZoneId
 data class HistoricalConditionsBackfillProperties(
 	val enabled: Boolean = true,
 	val daysBefore: Int = 30,
+	val cron: String = "0 30 3 * * *",
 	val zone: String = "Europe/Paris",
 ) {
 	init {
 		require(daysBefore >= 0) { "La fenêtre de backfill conditions doit être positive ou nulle" }
+		require(cron.isNotBlank()) { "La cron du backfill conditions est obligatoire" }
 		require(zone.isNotBlank()) { "La zone horaire du backfill conditions est obligatoire" }
 	}
 }

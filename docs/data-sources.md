@@ -35,9 +35,10 @@ The UI should keep the Open-Meteo marine values explicit: the mean wave period, 
 period, the swell component, and the wind-wave component are related but not equivalent.
 This distinction is important when comparing the application with external forecast tools.
 
-Historical Open-Meteo conditions are backfilled for recent saved sessions when their snapshots are
-missing. This repair is limited to the configured past window, defaults to 30 days, and stores the
-result in SQLite. Future Open-Meteo forecasts are still fetched on demand because they can change.
+Historical Open-Meteo conditions are backfilled on startup and daily for recent saved sessions when
+their snapshots are missing. This repair is limited to the configured past window, defaults to 30 days,
+and stores the result in SQLite. Future Open-Meteo forecasts are still fetched on demand because they
+can change.
 
 ## Provider Abstraction
 
