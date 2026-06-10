@@ -105,6 +105,15 @@ class HomeControllerTests {
 	}
 
 	@Test
+	fun `home page hides generic station name`() {
+		tideCacheRepository.save(availableTideCache(LocalDate.parse("2026-06-04"), stationName = "station"))
+
+		mockMvc.perform(get("/"))
+			.andExpect(status().isOk)
+			.andExpect(content().string(containsString("Station à 12,4 km")))
+	}
+
+	@Test
 	fun `home page renders quota reached tide state without provider fetch`() {
 		repeat(6) {
 			providerCallLogRepository.save(
@@ -191,14 +200,14 @@ class HomeControllerTests {
 			.andExpect(content().string(containsString("12:40 / 18:55")))
 	}
 
-	private fun availableTideCache(date: LocalDate): TideDayCache =
+	private fun availableTideCache(date: LocalDate, stationName: String = "Saint-Nazaire"): TideDayCache =
 		TideDayCache(
 			id = null,
 			spotId = SpotId("initial"),
 			date = date,
 			providerName = "Stormglass",
 			fetchedAt = Instant.parse("2026-06-04T02:00:00Z"),
-			stationName = "Saint-Nazaire",
+			stationName = stationName,
 			stationDistanceKilometers = 12.4,
 			coefficient = null,
 			unavailableReason = null,

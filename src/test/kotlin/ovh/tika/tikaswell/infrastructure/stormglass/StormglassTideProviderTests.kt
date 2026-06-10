@@ -75,6 +75,15 @@ class StormglassTideProviderTests {
 	}
 
 	@Test
+	fun `provider maps Stormglass sg sea level field`() {
+		val provider = provider(apiKey = "test-api-key")
+
+		val tide = provider.fetchTideDay(spot, LocalDate.parse("2026-06-04"))
+
+		assertThat(tide.points[1].waterHeightMeters).isEqualTo(3.6)
+	}
+
+	@Test
 	fun `provider declares missing api key without exposing a secret`() {
 		val provider = provider(apiKey = "")
 
@@ -104,7 +113,7 @@ class StormglassTideProviderTests {
 			{
 			  "data": [
 			    { "height": 3.2, "time": "2026-06-04T09:00:00+00:00" },
-			    { "height": 3.6, "time": "2026-06-04T10:00:00+00:00" }
+			    { "sg": 3.6, "time": "2026-06-04T10:00:00+00:00" }
 			  ],
 			  "meta": {
 			    "station": {

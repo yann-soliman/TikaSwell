@@ -57,7 +57,7 @@ class StormglassTideProvider(
 			unavailableMessage = null,
 			points = points.data.mapNotNull { point ->
 				point.time?.let { timestamp ->
-					TidePoint(timestamp = timestamp, waterHeightMeters = point.height)
+					TidePoint(timestamp = timestamp, waterHeightMeters = point.heightMeters)
 				}
 			},
 			events = extremes.data.mapNotNull { event ->
@@ -107,8 +107,13 @@ internal data class StormglassSeaLevelResponse(
 
 internal data class StormglassSeaLevelPoint(
 	val height: Double? = null,
+	@JsonProperty("sg")
+	val stormglassHeight: Double? = null,
 	val time: Instant? = null,
-)
+) {
+	val heightMeters: Double?
+		get() = height ?: stormglassHeight
+}
 
 internal data class StormglassExtremesResponse(
 	val data: List<StormglassExtremePoint> = emptyList(),

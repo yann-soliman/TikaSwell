@@ -207,9 +207,7 @@ data class TideContextView(
 			val point = cache.points.nearestTo(instant)
 			val previousEvent = cache.events.filter { !it.timestamp.isAfter(instant) }.maxByOrNull { it.timestamp }
 			val nextEvent = cache.events.filter { !it.timestamp.isBefore(instant) }.minByOrNull { it.timestamp }
-			val station = cache.stationName?.let { stationName ->
-				cache.stationDistanceKilometers?.let { "$stationName · ${it.format(1)} km" } ?: stationName
-			}
+			val station = stationLabel(cache.stationName, cache.stationDistanceKilometers)
 
 			return TideContextView(
 				available = true,
@@ -256,6 +254,16 @@ data class TideContextView(
 
 		private fun TideEvent.formatAt(zoneId: ZoneId): String =
 			timestamp.atZone(zoneId).format(timeFormatter)
+
+		private fun stationLabel(stationName: String?, stationDistanceKilometers: Double?): String? {
+			val meaningfulName = stationName?.trim()?.takeUnless { it.equals("station", ignoreCase = true) }
+			return when {
+				meaningfulName != null && stationDistanceKilometers != null -> "$meaningfulName · ${stationDistanceKilometers.format(1)} km"
+				meaningfulName != null -> meaningfulName
+				stationDistanceKilometers != null -> "Station à ${stationDistanceKilometers.format(1)} km"
+				else -> null
+			}
+		}
 	}
 }
 

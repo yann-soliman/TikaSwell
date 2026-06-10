@@ -57,7 +57,7 @@ class TideService(
 
 	private fun getTideDay(spot: Spot, date: LocalDate, purpose: ProviderCallPurpose): TideDayCache {
 		val cached = tideCacheRepository.findBySpotIdAndDateAndProvider(spot.id, date, tideProvider.name)
-		if (cached != null) {
+		if (cached != null && cached.isUsableForPrefetch()) {
 			return cached
 		}
 
@@ -160,6 +160,10 @@ class TideService(
 		const val SECONDS_PER_DAY = 86_400L
 	}
 }
+
+private fun TideDayCache.isUsableForPrefetch(): Boolean =
+	// Un cache disponible sans point de hauteur est incomplet pour le scoring et doit pouvoir être réparé.
+	unavailableReason != null || points.isNotEmpty()
 
 private fun Throwable.sanitizedProviderMessage(): String {
 	val rawMessage = message ?: return "Provider marée indisponible"
