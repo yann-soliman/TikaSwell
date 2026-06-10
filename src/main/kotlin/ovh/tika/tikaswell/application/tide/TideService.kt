@@ -28,6 +28,11 @@ class TideService(
 		return getTideDay(spot, date, ProviderCallPurpose.TIDE_CACHE_PREFETCH)
 	}
 
+	fun hasUsableCachedTideDay(spot: Spot, date: LocalDate): Boolean =
+		tideCacheRepository.findBySpotIdAndDateAndProvider(spot.id, date, tideProvider.name)
+			?.isUsableForPrefetch()
+			?: false
+
 	fun getCachedTideDay(spot: Spot, date: LocalDate): TideDayCache {
 		val cached = tideCacheRepository.findBySpotIdAndDateAndProvider(spot.id, date, tideProvider.name)
 		if (cached != null) {

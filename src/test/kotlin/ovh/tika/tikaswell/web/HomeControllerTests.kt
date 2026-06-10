@@ -312,7 +312,7 @@ class HomeControllerTests {
 
 class TestTideProvider : TideProvider {
 	override val name: String = "api-maree.fr"
-	override val requiredCallsPerFetch: Int = 2
+	override val requiredCallsPerFetch: Int = 1
 	var unavailableReason: TideUnavailableReason? = null
 	var fetchCount: Int = 0
 

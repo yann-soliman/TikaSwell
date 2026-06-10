@@ -36,7 +36,7 @@ Ne jamais committer de vraie clé API dans le dépôt, même dans un exemple.
 | `API_MAREE_SITE_ID` | Non | `saint-nazaire` | Site de marée utilisé pour le spot |
 | `API_MAREE_STEP_MINUTES` | Non | `10` | Pas de temps de la courbe de marée |
 | `API_MAREE_TIMEZONE` | Non | `Europe/Paris` | Fuseau horaire des requêtes marée |
-| `TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY` | Non | `120` | Quota applicatif quotidien pour les appels marée |
+| `TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY` | Non | `180` | Quota applicatif quotidien pour les appels marée |
 | `TIKASWELL_TIDE_PREFETCH_ENABLED` | Non | `true` | Active le préchargement automatique du cache marée |
 | `TIKASWELL_TIDE_PREFETCH_CRON` | Non | `0 0 3 * * *` | Horaire du préchargement quotidien Spring, par défaut 03:00 |
 | `TIKASWELL_TIDE_PREFETCH_ZONE` | Non | `Europe/Paris` | Fuseau horaire utilisé par le scheduler marée |
@@ -136,7 +136,7 @@ API_MAREE_API_KEY=
 API_MAREE_SITE_ID=saint-nazaire
 API_MAREE_STEP_MINUTES=10
 API_MAREE_TIMEZONE=Europe/Paris
-TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY=120
+TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY=180
 TIKASWELL_TIDE_PREFETCH_ENABLED=true
 TIKASWELL_TIDE_PREFETCH_CRON=0 0 3 * * *
 TIKASWELL_TIDE_PREFETCH_ZONE=Europe/Paris
@@ -160,7 +160,7 @@ API_MAREE_API_KEY=<valeur privée saisie uniquement dans Portainer>
 API_MAREE_SITE_ID=saint-nazaire
 API_MAREE_STEP_MINUTES=10
 API_MAREE_TIMEZONE=Europe/Paris
-TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY=120
+TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY=180
 TIKASWELL_TIDE_PREFETCH_ENABLED=true
 TIKASWELL_TIDE_PREFETCH_CRON=0 0 3 * * *
 TIKASWELL_TIDE_PREFETCH_ZONE=Europe/Paris

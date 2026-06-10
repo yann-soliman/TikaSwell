@@ -177,7 +177,7 @@ class TideSnapshotServiceTests {
 
 	private class FakeTideProvider : TideProvider {
 		override val name: String = "api-maree.fr"
-		override val requiredCallsPerFetch: Int = 2
+		override val requiredCallsPerFetch: Int = 1
 
 		override fun fetchTideDay(spot: Spot, date: LocalDate): TideDayCache =
 			error("Le calcul de snapshot doit lire uniquement le cache")

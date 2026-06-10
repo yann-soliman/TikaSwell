@@ -39,6 +39,17 @@ class TideServiceTests {
 	}
 
 	@Test
+	fun `service detects usable cached tide day`() {
+		val cacheRepository = InMemoryTideCacheRepository().apply {
+			save(availableCache())
+		}
+		val service = service(cacheRepository = cacheRepository)
+
+		assertThat(service.hasUsableCachedTideDay(spot, date)).isTrue()
+		assertThat(service.hasUsableCachedTideDay(spot, date.plusDays(1))).isFalse()
+	}
+
+	@Test
 	fun `service returns missing api key without logging a provider call`() {
 		val calls = InMemoryProviderCallLogRepository()
 		val service = service(
@@ -68,25 +79,25 @@ class TideServiceTests {
 	fun `service fetches missing tide day stores it and logs provider calls`() {
 		val cacheRepository = InMemoryTideCacheRepository()
 		val calls = InMemoryProviderCallLogRepository()
-		val provider = FakeTideProvider(requiredCalls = 2)
+		val provider = FakeTideProvider()
 		val service = service(provider, cacheRepository, calls)
 
 		val tide = service.getTideDay(spot, date)
 
 		assertThat(tide.unavailableReason).isNull()
 		assertThat(cacheRepository.findBySpotIdAndDateAndProvider(spot.id, date, provider.name)).isNotNull()
-		assertThat(calls.calls).hasSize(2)
+		assertThat(calls.calls).hasSize(1)
 	}
 
 	@Test
 	fun `service logs prefetch purpose when preloading a missing tide day`() {
 		val calls = InMemoryProviderCallLogRepository()
-		val provider = FakeTideProvider(requiredCalls = 2)
+		val provider = FakeTideProvider()
 		val service = service(provider = provider, callRepository = calls)
 
 		service.prefetchTideDay(spot, date)
 
-		assertThat(calls.calls).hasSize(2)
+		assertThat(calls.calls).hasSize(1)
 		assertThat(calls.calls).allSatisfy { call ->
 			assertThat(call.purpose).isEqualTo(ProviderCallPurpose.TIDE_CACHE_PREFETCH)
 		}
@@ -157,7 +168,7 @@ class TideServiceTests {
 		)
 
 	private inner class FakeTideProvider(
-		private val requiredCalls: Int = 2,
+		private val requiredCalls: Int = 1,
 		private val unavailableReason: TideUnavailableReason? = null,
 		private val failure: RuntimeException? = null,
 	) : TideProvider {

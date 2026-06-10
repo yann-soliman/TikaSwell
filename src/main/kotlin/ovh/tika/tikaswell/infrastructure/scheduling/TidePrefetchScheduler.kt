@@ -80,6 +80,7 @@ class TidePrefetchScheduler(
 			.map { it.midpoint().atZone(ZoneId.of(properties.prefetch.zone)).toLocalDate() }
 			.filter { it in earliestSupportedDate..<today }
 			.distinct()
+			.filterNot { tideService.hasUsableCachedTideDay(spot, it) }
 			.sortedDescending()
 
 		if (dates.isEmpty()) {

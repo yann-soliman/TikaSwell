@@ -102,6 +102,22 @@ class TidePrefetchSchedulerTests {
 	}
 
 	@Test
+	fun `scheduler does not backfill historical session date already in cache`() {
+		val provider = RecordingTideProvider()
+		val cacheRepository = InMemoryTideCacheRepository().apply {
+			save(cache(LocalDate.parse("2026-06-02")))
+		}
+		val sessionRepository = InMemorySurfSessionRepository().apply {
+			save(session(Instant.parse("2026-06-02T16:30:00Z"), Instant.parse("2026-06-02T18:30:00Z")))
+		}
+		val scheduler = scheduler(provider, cacheRepository = cacheRepository, sessionRepository = sessionRepository)
+
+		scheduler.backfillHistoricalSessions(trigger = "test")
+
+		assertThat(provider.fetchedDates).isEmpty()
+	}
+
+	@Test
 	fun `scheduler ignores historical session dates outside provider window`() {
 		val provider = RecordingTideProvider()
 		val sessionRepository = InMemorySurfSessionRepository().apply {
@@ -196,7 +212,7 @@ class TidePrefetchSchedulerTests {
 		private val failure: RuntimeException? = null,
 	) : TideProvider {
 		override val name: String = "api-maree.fr"
-		override val requiredCallsPerFetch: Int = 2
+		override val requiredCallsPerFetch: Int = 1
 		val fetchedDates = mutableListOf<LocalDate>()
 
 		override fun fetchTideDay(spot: Spot, date: LocalDate): TideDayCache {
