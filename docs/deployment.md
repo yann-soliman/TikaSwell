@@ -27,6 +27,9 @@ Ne jamais committer de vraie clé API dans le dépôt, même dans un exemple.
 | `TIKASWELL_SPOT_LONGITUDE` | Oui | `-2.15987` | Longitude du spot |
 | `OPEN_METEO_WEATHER_BASE_URL` | Non | `https://api.open-meteo.com` | API météo Open-Meteo |
 | `OPEN_METEO_MARINE_BASE_URL` | Non | `https://marine-api.open-meteo.com` | API marine Open-Meteo |
+| `TIKASWELL_CONDITIONS_BACKFILL_ENABLED` | Non | `true` | Active la réparation des conditions historiques manquantes |
+| `TIKASWELL_CONDITIONS_BACKFILL_DAYS_BEFORE` | Non | `30` | Fenêtre passée Open-Meteo réparée pour les sessions |
+| `TIKASWELL_CONDITIONS_BACKFILL_ZONE` | Non | `Europe/Paris` | Fuseau horaire de la fenêtre de backfill conditions |
 | `API_MAREE_BASE_URL` | Non | `https://api-maree.fr` | API marée |
 | `API_MAREE_API_KEY` | Oui pour la marée | valeur privée saisie dans Portainer | Clé API api-maree.fr, jamais dans Git |
 | `API_MAREE_SITE_ID` | Non | `saint-nazaire` | Site de marée utilisé pour le spot |
@@ -83,6 +86,18 @@ Limites connues :
 - les bouées sont volontairement laissées de côté pour l'instant ;
 - pendant le développement, aucune garantie de rétrocompatibilité SQLite n'est requise : on peut repartir de zéro sur les données si nécessaire.
 
+## Conditions Historiques Open-Meteo
+
+À chaque démarrage, l'application cherche les sessions passées dans la fenêtre `J-30 -> hier`
+qui n'ont pas encore de snapshots météo/marine en base. Pour ces sessions uniquement, elle appelle
+Open-Meteo en historique, puis stocke les snapshots dans SQLite.
+
+Ce backfill est idempotent :
+
+- une session déjà enrichie n'est pas rappelée ;
+- une erreur Open-Meteo est loggée sans bloquer le démarrage ;
+- les prévisions futures Open-Meteo restent récupérées à la demande, car elles peuvent changer.
+
 ## Développement local
 
 Lancer :
@@ -111,6 +126,9 @@ TIKASWELL_SPOT_LATITUDE=47.20744
 TIKASWELL_SPOT_LONGITUDE=-2.15987
 OPEN_METEO_WEATHER_BASE_URL=https://api.open-meteo.com
 OPEN_METEO_MARINE_BASE_URL=https://marine-api.open-meteo.com
+TIKASWELL_CONDITIONS_BACKFILL_ENABLED=true
+TIKASWELL_CONDITIONS_BACKFILL_DAYS_BEFORE=30
+TIKASWELL_CONDITIONS_BACKFILL_ZONE=Europe/Paris
 API_MAREE_BASE_URL=https://api-maree.fr
 API_MAREE_API_KEY=
 API_MAREE_SITE_ID=saint-nazaire

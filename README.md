@@ -66,6 +66,8 @@ The API key must be provided through an environment variable:
 
 Useful cache and prefetch variables:
 
+- `TIKASWELL_CONDITIONS_BACKFILL_ENABLED`: repairs missing historical Open-Meteo snapshots on startup, defaults to `true`.
+- `TIKASWELL_CONDITIONS_BACKFILL_DAYS_BEFORE`: historical repair window, defaults to `30`.
 - `TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY`: application-side daily quota, defaults to `120`.
 - `TIKASWELL_TIDE_PREFETCH_ENABLED`: enables automatic prefetch, defaults to `true`.
 - `TIKASWELL_TIDE_PREFETCH_CRON`: Spring cron for daily prefetch, defaults to `0 0 3 * * *`.
