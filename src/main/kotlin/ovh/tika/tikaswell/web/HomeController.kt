@@ -4,6 +4,7 @@ import jakarta.validation.Valid
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotNull
+import ovh.tika.tikaswell.application.conditions.ConditionSnapshotRepository
 import ovh.tika.tikaswell.application.session.CreateSurfSessionCommand
 import ovh.tika.tikaswell.application.session.SurfSessionService
 import ovh.tika.tikaswell.application.spot.SpotProvider
@@ -12,8 +13,10 @@ import ovh.tika.tikaswell.application.tide.TideService
 import ovh.tika.tikaswell.domain.ConditionSnapshot
 import ovh.tika.tikaswell.domain.ConditionsProvider
 import ovh.tika.tikaswell.domain.CurrentScore
+import ovh.tika.tikaswell.domain.Direction
 import ovh.tika.tikaswell.domain.Rating
 import ovh.tika.tikaswell.domain.ScoreContribution
+import ovh.tika.tikaswell.domain.SessionConditionSnapshot
 import ovh.tika.tikaswell.domain.SurfSession
 import ovh.tika.tikaswell.domain.TideDayCache
 import ovh.tika.tikaswell.domain.TideEvent
@@ -33,7 +36,12 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.roundToInt
+import kotlin.math.sin
 
 @Controller
 class HomeController(
@@ -42,6 +50,7 @@ class HomeController(
 	private val conditionsProvider: ConditionsProvider,
 	private val surfScoreService: SurfScoreService,
 	private val tideService: TideService,
+	private val conditionSnapshotRepository: ConditionSnapshotRepository,
 ) {
 	private val zoneId = ZoneId.of("Europe/Paris")
 
@@ -105,6 +114,8 @@ class HomeController(
 				zoneId = zoneId,
 				tide = tideService.getCachedTideDay(spot, session.midpoint().atZone(zoneId).toLocalDate())
 					.let { TideContextView.from(it, session.midpoint(), zoneId) },
+				conditions = session.id?.let { conditionSnapshotRepository.findBySessionId(it) }.orEmpty()
+					.let(SessionConditionsView::from),
 			)
 		})
 		model.addAttribute("currentConditions", currentConditions.getOrNull()?.snapshot?.let(CurrentConditionsView::from))
@@ -166,12 +177,18 @@ data class SurfSessionView(
 	val rating: Int,
 	val notes: String?,
 	val tide: TideContextView,
+	val conditions: SessionConditionsView,
 ) {
 	companion object {
 		private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 		private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-		fun from(session: SurfSession, zoneId: ZoneId, tide: TideContextView): SurfSessionView {
+		fun from(
+			session: SurfSession,
+			zoneId: ZoneId,
+			tide: TideContextView,
+			conditions: SessionConditionsView,
+		): SurfSessionView {
 			val startsAt = session.startsAt.atZone(zoneId)
 			val endsAt = session.endsAt.atZone(zoneId)
 			return SurfSessionView(
@@ -181,6 +198,40 @@ data class SurfSessionView(
 				rating = session.rating.value,
 				notes = session.notes,
 				tide = tide,
+				conditions = conditions,
+			)
+		}
+	}
+}
+
+data class SessionConditionsView(
+	val captured: Boolean,
+	val summary: String,
+	val providerName: String?,
+) {
+	companion object {
+		fun from(snapshots: List<SessionConditionSnapshot>): SessionConditionsView {
+			if (snapshots.isEmpty()) {
+				return SessionConditionsView(
+					captured = false,
+					summary = "Conditions météo/marine non capturées",
+					providerName = null,
+				)
+			}
+
+			val conditions = snapshots.map { it.snapshot }
+			val providerName = conditions.map { it.providerName }.distinct().singleOrNull() ?: "Sources multiples"
+			val windSpeed = conditions.map { it.windSpeedKmh }.averageOrNull()?.let { "${it.format(1)} km/h" } ?: "n/d"
+			val windGust = conditions.mapNotNull { it.windGustKmh }.averageOrNull()?.let { "${it.format(1)} km/h" } ?: "n/d"
+			val windDirection = conditions.mapNotNull { it.windDirection }.averageDirection()?.let { "${it.degrees}°" } ?: "n/d"
+			val waveHeight = conditions.mapNotNull { it.waveHeightMeters }.averageOrNull()?.let { "${it.format(1)} m" } ?: "n/d"
+			val wavePeriod = conditions.mapNotNull { it.wavePeriodSeconds }.averageOrNull()?.let { "${it.format(1)} s" } ?: "n/d"
+			val waveDirection = conditions.mapNotNull { it.waveDirection }.averageDirection()?.let { "${it.degrees}°" } ?: "n/d"
+
+			return SessionConditionsView(
+				captured = true,
+				summary = "Vent $windSpeed, rafales $windGust, dir. $windDirection · Vagues $waveHeight, période $wavePeriod, dir. $waveDirection",
+				providerName = providerName,
 			)
 		}
 	}
@@ -356,6 +407,22 @@ data class ScoreContributionView(
 
 private fun Double.format(decimals: Int): String =
 	"%.${decimals}f".format(java.util.Locale.FRANCE, this)
+
+private fun List<Double>.averageOrNull(): Double? =
+	if (isEmpty()) null else average()
+
+private fun List<Direction>.averageDirection(): Direction? =
+	if (isEmpty()) {
+		null
+	} else {
+		val radians = map { it.degrees * PI / 180.0 }
+		val x = radians.sumOf(::cos)
+		val y = radians.sumOf(::sin)
+		Direction((atan2(y, x) * 180.0 / PI).roundToInt().floorMod(360))
+	}
+
+private fun Int.floorMod(mod: Int): Int =
+	((this % mod) + mod) % mod
 
 private fun SurfSession.midpoint(): Instant =
 	startsAt.plus(Duration.between(startsAt, endsAt).dividedBy(2))

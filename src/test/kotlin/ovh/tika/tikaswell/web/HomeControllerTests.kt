@@ -1,5 +1,9 @@
 package ovh.tika.tikaswell.web
 
+import ovh.tika.tikaswell.application.session.SurfSessionRepository
+import ovh.tika.tikaswell.application.tide.ProviderCallLogRepository
+import ovh.tika.tikaswell.application.tide.TideCacheRepository
+import ovh.tika.tikaswell.application.tide.TideProvider
 import ovh.tika.tikaswell.domain.ConditionSnapshot
 import ovh.tika.tikaswell.domain.ConditionsProvider
 import ovh.tika.tikaswell.domain.CurrentConditions
@@ -7,17 +11,16 @@ import ovh.tika.tikaswell.domain.Direction
 import ovh.tika.tikaswell.domain.ProviderCallLog
 import ovh.tika.tikaswell.domain.ProviderCallPurpose
 import ovh.tika.tikaswell.domain.ProviderCallResult
+import ovh.tika.tikaswell.domain.Rating
 import ovh.tika.tikaswell.domain.Spot
 import ovh.tika.tikaswell.domain.SpotId
+import ovh.tika.tikaswell.domain.SurfSession
 import ovh.tika.tikaswell.domain.TimeWindow
 import ovh.tika.tikaswell.domain.TideDayCache
 import ovh.tika.tikaswell.domain.TideEvent
 import ovh.tika.tikaswell.domain.TideEventType
 import ovh.tika.tikaswell.domain.TidePoint
 import ovh.tika.tikaswell.domain.TideUnavailableReason
-import ovh.tika.tikaswell.application.tide.ProviderCallLogRepository
-import ovh.tika.tikaswell.application.tide.TideCacheRepository
-import ovh.tika.tikaswell.application.tide.TideProvider
 import org.hamcrest.Matchers.containsString
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -56,6 +59,9 @@ class HomeControllerTests {
 
 	@Autowired
 	private lateinit var tideProvider: TestTideProvider
+
+	@Autowired
+	private lateinit var surfSessionRepository: SurfSessionRepository
 
 	@BeforeEach
 	fun cleanDatabase() {
@@ -175,9 +181,31 @@ class HomeControllerTests {
 			.andExpect(status().isOk)
 			.andExpect(content().string(containsString("Clean morning lines")))
 			.andExpect(content().string(containsString("Marée absente du cache pour cette date")))
+			.andExpect(content().string(containsString("Provider de test")))
+			.andExpect(content().string(containsString("Vent 18,0 km/h, rafales 25,0 km/h, dir. 260°")))
+			.andExpect(content().string(containsString("Vagues 1,1 m, période 8,0 s, dir. 245°")))
 			.andExpect(content().string(containsString("Score estimé")))
 			.andExpect(content().string(containsString("Sessions qui influencent le score")))
 			.andExpect(content().string(containsString("8")))
+	}
+
+	@Test
+	fun `session history renders a clear state when conditions were not captured`() {
+		surfSessionRepository.save(
+			SurfSession(
+				id = null,
+				spotId = SpotId("initial"),
+				startsAt = Instant.parse("2026-06-04T09:00:00Z"),
+				endsAt = Instant.parse("2026-06-04T11:00:00Z"),
+				rating = Rating(7),
+				notes = "Session sans snapshot",
+			),
+		)
+
+		mockMvc.perform(get("/"))
+			.andExpect(status().isOk)
+			.andExpect(content().string(containsString("Session sans snapshot")))
+			.andExpect(content().string(containsString("Conditions météo/marine non capturées")))
 	}
 
 	@Test
