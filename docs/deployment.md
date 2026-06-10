@@ -46,6 +46,36 @@ Au démarrage, elle précharge seulement aujourd'hui et demain par défaut. Chaq
 elle complète ensuite la fenêtre glissante jusqu'à J+7, sans récupérer les jours déjà présents
 en cache.
 
+## Marée, Cache Et Limites
+
+La marée est lue en cache avant tout appel provider. Le cache est stocké dans SQLite par
+`spot/date/provider` et survit aux redémarrages du conteneur tant que le volume Docker est conservé.
+
+Comportement attendu :
+
+- au rendu du dashboard, l'application lit le cache et n'appelle pas Stormglass ;
+- au calcul du score, l'application lit le cache et n'appelle pas Stormglass ;
+- au démarrage, le scheduler précharge aujourd'hui et demain par défaut ;
+- chaque jour à 03:00, le scheduler complète la fenêtre aujourd'hui -> J+7 ;
+- si une journée est déjà en cache avec des hauteurs exploitables, elle n'est pas refetchée ;
+- si un cache est incomplet, par exemple points présents mais hauteurs absentes, il peut être remplacé au prochain préchargement.
+
+États d'indisponibilité possibles dans l'IHM :
+
+- clé Stormglass absente ou refusée ;
+- quota applicatif atteint pour la journée ;
+- provider Stormglass indisponible ;
+- date pas encore préchargée ;
+- cache existant mais incomplet avant réparation.
+
+Limites connues :
+
+- Stormglass n'est pas une autorité hydrographique locale ;
+- le coefficient de marée n'est pas récupéré actuellement ;
+- les données peuvent être moins précises qu'une source locale officielle ;
+- les bouées sont volontairement laissées de côté pour l'instant ;
+- pendant le développement, aucune garantie de rétrocompatibilité SQLite n'est requise : on peut repartir de zéro sur les données si nécessaire.
+
 ## Développement local
 
 Lancer :
@@ -86,6 +116,33 @@ TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD=1
 
 Pour `STORMGLASS_API_KEY`, remplacer la valeur vide directement dans Portainer par la vraie
 clé privée. Ne pas la mettre dans le compose, le README, une issue GitHub, un commit ou un log.
+
+### Procédure Portainer Pour Stormglass
+
+1. Ouvrir la stack TikaSwell dans Portainer.
+2. Vérifier que la stack pointe bien vers `ops/docker-compose.yml` sur la branche `main`.
+3. Ajouter ou corriger les variables d'environnement :
+
+```text
+STORMGLASS_API_KEY=<valeur privée saisie uniquement dans Portainer>
+TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY=6
+TIKASWELL_TIDE_PREFETCH_ENABLED=true
+TIKASWELL_TIDE_PREFETCH_CRON=0 0 3 * * *
+TIKASWELL_TIDE_PREFETCH_ZONE=Europe/Paris
+TIKASWELL_TIDE_PREFETCH_DAYS_AHEAD=7
+TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD=1
+```
+
+4. Redéployer la stack ou recréer le conteneur applicatif.
+5. Vérifier les logs au démarrage : une ligne `Préchargement marée démarrage` doit apparaître.
+6. Ouvrir l'IHM et vérifier la carte `Marée` :
+   - hauteur d'eau affichée si le cache est complet ;
+   - phase montante/descendante ;
+   - prochaine pleine mer et prochaine basse mer ;
+   - message français clair si la marée reste indisponible.
+
+Pour un test radical en développement, supprimer le volume SQLite et recréer la stack force un
+cache neuf, mais efface aussi les sessions enregistrées.
 
 Après déploiement, tester :
 

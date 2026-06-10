@@ -50,6 +50,32 @@ Le spot initial se configure avec :
 - `TIKASWELL_SPOT_LATITUDE`
 - `TIKASWELL_SPOT_LONGITUDE`
 
+## Configuration Marée Stormglass
+
+Open-Meteo reste la source météo/marine principale. Stormglass est utilisé uniquement pour le
+contexte de marée : hauteur d'eau, pleine mer, basse mer, phase montante/descendante et station
+associée quand disponible.
+
+La clé doit être fournie par variable d'environnement :
+
+- `STORMGLASS_API_KEY` : clé privée Stormglass, à saisir dans Portainer ou l'environnement
+  d'exécution. Ne jamais la mettre dans Git, dans le compose, dans un README, dans une issue ou
+  dans un log.
+
+Variables utiles pour le cache et le préchargement :
+
+- `TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY` : quota applicatif quotidien, `6` par défaut.
+- `TIKASWELL_TIDE_PREFETCH_ENABLED` : active le préchargement automatique, `true` par défaut.
+- `TIKASWELL_TIDE_PREFETCH_CRON` : horaire Spring du préchargement quotidien, `0 0 3 * * *`.
+- `TIKASWELL_TIDE_PREFETCH_DAYS_AHEAD` : horizon quotidien, `7` signifie aujourd'hui jusqu'à J+7.
+- `TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD` : horizon au démarrage, `1` signifie aujourd'hui et demain.
+
+La stratégie est volontairement prudente : lecture cache-first, préchargement quotidien à 03:00,
+cache SQLite durable par spot/date/provider, et pas d'expiration automatique courte. La marée peut
+rester indisponible si la clé est absente, si le quota est atteint, si Stormglass est indisponible
+ou si la date n'a pas encore été préchargée. Les données de bouées sont volontairement hors scope
+pour l'instant. Le détail Portainer est dans [Déploiement](docs/deployment.md).
+
 La liste complète des variables d'environnement, y compris les secrets provider comme
 `STORMGLASS_API_KEY`, est documentée dans [Déploiement](docs/deployment.md). Les vraies clés
 API doivent être saisies dans l'environnement d'exécution, jamais dans Git.
