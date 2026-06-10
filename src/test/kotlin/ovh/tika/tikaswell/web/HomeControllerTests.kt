@@ -125,7 +125,7 @@ class HomeControllerTests {
 			providerCallLogRepository.save(
 				ProviderCallLog(
 					id = null,
-					providerName = "Stormglass",
+					providerName = "api-maree.fr",
 					spotId = SpotId("initial"),
 					calledForDate = LocalDate.parse("2026-06-04"),
 					calledAt = Instant.now(),
@@ -235,7 +235,7 @@ class HomeControllerTests {
 			id = null,
 			spotId = SpotId("initial"),
 			date = date,
-			providerName = "Stormglass",
+			providerName = "api-maree.fr",
 			fetchedAt = Instant.parse("2026-06-04T02:00:00Z"),
 			stationName = stationName,
 			stationDistanceKilometers = 12.4,
@@ -305,7 +305,7 @@ class HomeControllerTests {
 }
 
 class TestTideProvider : TideProvider {
-	override val name: String = "Stormglass"
+	override val name: String = "api-maree.fr"
 	override val requiredCallsPerFetch: Int = 2
 	var unavailableReason: TideUnavailableReason? = null
 	var fetchCount: Int = 0

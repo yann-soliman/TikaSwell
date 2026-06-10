@@ -25,11 +25,14 @@ tikaswell:
   open-meteo:
     weather-base-url: ${OPEN_METEO_WEATHER_BASE_URL:https://api.open-meteo.com}
     marine-base-url: ${OPEN_METEO_MARINE_BASE_URL:${OPEN_METEO_BASE_URL:https://marine-api.open-meteo.com}}
-  stormglass:
-    base-url: ${STORMGLASS_BASE_URL:https://api.stormglass.io}
-    api-key: ${STORMGLASS_API_KEY:}
+  api-maree:
+    base-url: ${API_MAREE_BASE_URL:https://api-maree.fr}
+    api-key: ${API_MAREE_API_KEY:}
+    site-id: ${API_MAREE_SITE_ID:saint-nazaire}
+    step-minutes: ${API_MAREE_STEP_MINUTES:10}
+    timezone: ${API_MAREE_TIMEZONE:Europe/Paris}
   tide:
-    max-provider-calls-per-day: ${TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY:6}
+    max-provider-calls-per-day: ${TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY:120}
     prefetch:
       enabled: ${TIKASWELL_TIDE_PREFETCH_ENABLED:true}
       cron: "${TIKASWELL_TIDE_PREFETCH_CRON:0 0 3 * * *}"

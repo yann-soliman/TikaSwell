@@ -107,7 +107,7 @@ class DomainModelTests {
 				timeUntilNextHighTide = null,
 				timeUntilNextLowTide = null,
 				coefficient = 80.0,
-				providerName = "Stormglass",
+				providerName = "api-maree.fr",
 			)
 		}
 
@@ -116,7 +116,7 @@ class DomainModelTests {
 				id = null,
 				spotId = spotId,
 				date = LocalDate.parse("2026-06-04"),
-				providerName = "Stormglass",
+				providerName = "api-maree.fr",
 				fetchedAt = Instant.parse("2026-06-04T00:00:00Z"),
 				stationName = "Saint-Nazaire",
 				stationDistanceKilometers = -1.0,

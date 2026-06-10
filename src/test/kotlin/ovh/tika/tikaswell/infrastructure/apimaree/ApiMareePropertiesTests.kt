@@ -1,14 +1,17 @@
-package ovh.tika.tikaswell.infrastructure.stormglass
+package ovh.tika.tikaswell.infrastructure.apimaree
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-class StormglassPropertiesTests {
+class ApiMareePropertiesTests {
 	@Test
 	fun `properties hide configured api key from string representation`() {
-		val properties = StormglassProperties(
-			baseUrl = "https://api.stormglass.io",
+		val properties = ApiMareeProperties(
+			baseUrl = "https://api-maree.fr",
 			apiKey = "private-provider-key",
+			siteId = "saint-nazaire",
+			stepMinutes = 10,
+			timezone = "Europe/Paris",
 		)
 
 		assertThat(properties.hasApiKey).isTrue()
@@ -19,9 +22,12 @@ class StormglassPropertiesTests {
 
 	@Test
 	fun `properties expose missing api key without leaking anything`() {
-		val properties = StormglassProperties(
-			baseUrl = "https://api.stormglass.io",
+		val properties = ApiMareeProperties(
+			baseUrl = "https://api-maree.fr",
 			apiKey = "",
+			siteId = "saint-nazaire",
+			stepMinutes = 10,
+			timezone = "Europe/Paris",
 		)
 
 		assertThat(properties.hasApiKey).isFalse()

@@ -36,7 +36,7 @@ class JdbcProviderCallLogRepositoryTests {
 		assertThat(first.id).isNotNull()
 		assertThat(
 			repository.countByProviderNameAndCalledAtBetween(
-				providerName = "Stormglass",
+				providerName = "api-maree.fr",
 				startsAt = Instant.parse("2026-06-04T00:00:00Z"),
 				endsAt = Instant.parse("2026-06-05T00:00:00Z"),
 			),
@@ -46,7 +46,7 @@ class JdbcProviderCallLogRepositoryTests {
 	private fun call(calledAt: Instant): ProviderCallLog =
 		ProviderCallLog(
 			id = null,
-			providerName = "Stormglass",
+			providerName = "api-maree.fr",
 			spotId = SpotId("ermitage"),
 			calledForDate = LocalDate.parse("2026-06-04"),
 			calledAt = calledAt,

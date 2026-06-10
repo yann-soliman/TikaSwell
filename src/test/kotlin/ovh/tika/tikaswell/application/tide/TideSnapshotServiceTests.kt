@@ -69,7 +69,7 @@ class TideSnapshotServiceTests {
 			id = null,
 			spotId = spot.id,
 			date = LocalDate.parse("2026-06-04"),
-			providerName = "Stormglass",
+			providerName = "api-maree.fr",
 			fetchedAt = clock.instant(),
 			stationName = "Saint-Nazaire",
 			stationDistanceKilometers = 12.4,
@@ -88,7 +88,7 @@ class TideSnapshotServiceTests {
 		)
 
 	private class FakeTideProvider : TideProvider {
-		override val name: String = "Stormglass"
+		override val name: String = "api-maree.fr"
 		override val requiredCallsPerFetch: Int = 2
 
 		override fun fetchTideDay(spot: Spot, date: LocalDate): TideDayCache =

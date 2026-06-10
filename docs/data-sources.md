@@ -57,31 +57,31 @@ Buoy integrations are intentionally left aside for now.
 
 ## Tide Provider
 
-Stormglass is selected as the MVP tide provider.
+api-maree.fr is selected as the MVP tide provider.
 
 Scope:
 
-- tide level
-- high and low tide timestamps
-- tide station metadata when available
+- tide water levels for the configured tide site
+- local tide curve points used by the UI and scoring
+- derived high/low tide timestamps after curve analysis
 - current and historical tide context needed by saved sessions
 
 Constraints:
 
-- Stormglass is not a replacement for Open-Meteo weather/marine data.
-- The free plan is limited to 10 requests per day, so TikaSwell must cache tide data in SQLite.
-- The application must never call Stormglass on every dashboard render.
-- The API key must be injected through `STORMGLASS_API_KEY` only.
+- api-maree.fr is not a replacement for Open-Meteo weather/marine data.
+- Tide water levels are stable for a given date and must be cached in SQLite.
+- The application must never call api-maree.fr on every dashboard render.
+- The API key must be injected through `API_MAREE_API_KEY` only.
 - The real API key must never appear in Git, logs, issues, README examples, or compose files.
-- Stormglass is not treated as an official hydrographic authority; local validation remains necessary.
+- api-maree.fr is based on derived Ifremer / PREVIMER harmonic components; local validation remains necessary.
 
 Implementation notes:
 
-- Prefer fetching a compact tide window around the session/current time and caching it by spot/date.
+- Fetch water levels for the configured tide site, initially `saint-nazaire` for the Ermitage spot.
 - Store provider metadata separately from the canonical tide fields so the domain stays provider-neutral.
 - Keep buoy integrations out of scope until the tide workflow is validated.
 
 References:
 
-- Stormglass Global Tide API: https://stormglass.io/global-tide-api/
-- Stormglass pricing: https://stormglass.io/pricing/
+- api-maree.fr documentation: https://api-maree.fr/documentation
+- api-maree.fr source and licence notes: https://api-maree.fr/

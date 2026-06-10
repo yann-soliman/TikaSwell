@@ -148,7 +148,7 @@ class TidePrefetchSchedulerTests {
 			id = null,
 			spotId = spot.id,
 			date = date,
-			providerName = "Stormglass",
+			providerName = "api-maree.fr",
 			fetchedAt = clock.instant(),
 			stationName = "Saint-Nazaire",
 			stationDistanceKilometers = 12.4,
@@ -162,7 +162,7 @@ class TidePrefetchSchedulerTests {
 	private inner class RecordingTideProvider(
 		private val failure: RuntimeException? = null,
 	) : TideProvider {
-		override val name: String = "Stormglass"
+		override val name: String = "api-maree.fr"
 		override val requiredCallsPerFetch: Int = 2
 		val fetchedDates = mutableListOf<LocalDate>()
 

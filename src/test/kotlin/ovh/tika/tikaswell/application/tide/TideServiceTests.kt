@@ -145,7 +145,7 @@ class TideServiceTests {
 			id = null,
 			spotId = spot.id,
 			date = date,
-			providerName = "Stormglass",
+			providerName = "api-maree.fr",
 			fetchedAt = clock.instant(),
 			stationName = "Saint-Nazaire",
 			stationDistanceKilometers = 12.4,
@@ -161,7 +161,7 @@ class TideServiceTests {
 		private val unavailableReason: TideUnavailableReason? = null,
 		private val failure: RuntimeException? = null,
 	) : TideProvider {
-		override val name: String = "Stormglass"
+		override val name: String = "api-maree.fr"
 		override val requiredCallsPerFetch: Int = requiredCalls
 		var fetchCount: Int = 0
 

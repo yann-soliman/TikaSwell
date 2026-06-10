@@ -116,7 +116,7 @@
       <article class="panel tide-panel" aria-labelledby="tide-title">
         <div class="panel-heading">
           <h2 id="tide-title">Marée</h2>
-          <span th:if="${currentTide != null}" th:text="${currentTide.providerName}">Stormglass</span>
+          <span th:if="${currentTide != null}" th:text="${currentTide.providerName}">api-maree.fr</span>
         </div>
         <p class="provider-error" th:if="${currentTide == null}">
           Marée indisponible sans conditions actuelles.

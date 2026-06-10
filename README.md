@@ -51,19 +51,22 @@ The initial spot is configured through:
 - `TIKASWELL_SPOT_LATITUDE`
 - `TIKASWELL_SPOT_LONGITUDE`
 
-## Stormglass Tide Configuration
+## api-maree.fr Tide Configuration
 
-Open-Meteo remains the main weather/marine provider. Stormglass is used only for tide context:
-water height, high tide, low tide, rising/falling phase, and station metadata when available.
+Open-Meteo remains the main weather/marine provider. api-maree.fr is used only for tide context:
+water height and the local tide curve for the configured tide site.
 
 The API key must be provided through an environment variable:
 
-- `STORMGLASS_API_KEY`: private Stormglass key, set in Portainer or the runtime environment.
+- `API_MAREE_API_KEY`: private api-maree.fr key, set in Portainer or the runtime environment.
   Never put the real key in Git, compose files, README examples, GitHub issues, or logs.
+- `API_MAREE_SITE_ID`: tide site identifier, defaults to `saint-nazaire`.
+- `API_MAREE_STEP_MINUTES`: tide curve interval in minutes, defaults to `10`.
+- `API_MAREE_TIMEZONE`: tide request timezone, defaults to `Europe/Paris`.
 
 Useful cache and prefetch variables:
 
-- `TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY`: application-side daily quota, defaults to `6`.
+- `TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY`: application-side daily quota, defaults to `120`.
 - `TIKASWELL_TIDE_PREFETCH_ENABLED`: enables automatic prefetch, defaults to `true`.
 - `TIKASWELL_TIDE_PREFETCH_CRON`: Spring cron for daily prefetch, defaults to `0 0 3 * * *`.
 - `TIKASWELL_TIDE_PREFETCH_DAYS_AHEAD`: daily horizon, `7` means today through D+7.
@@ -71,11 +74,11 @@ Useful cache and prefetch variables:
 
 The strategy is deliberately conservative: cache-first reads, daily prefetch at 03:00, durable
 SQLite cache by spot/date/provider, and no short automatic expiry. Tide data can remain unavailable
-when the key is missing, the quota is reached, Stormglass is unavailable, or a date has not been
+when the key is missing, the quota is reached, api-maree.fr is unavailable, or a date has not been
 prefetched yet. Buoy data is intentionally out of scope for now. Portainer details are in
 [Deployment](docs/deployment.md).
 
-The complete environment variable list, including provider secrets such as `STORMGLASS_API_KEY`,
+The complete environment variable list, including provider secrets such as `API_MAREE_API_KEY`,
 is documented in [Deployment](docs/deployment.md). Real API keys must be set in the runtime
 environment, never committed to Git.
 

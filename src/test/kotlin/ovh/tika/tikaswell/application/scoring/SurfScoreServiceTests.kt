@@ -152,7 +152,7 @@ class SurfScoreServiceTests {
 			timeUntilNextHighTide = Duration.ofHours(3),
 			timeUntilNextLowTide = Duration.ofHours(5),
 			coefficient = null,
-			providerName = "Stormglass",
+			providerName = "api-maree.fr",
 		)
 }
 

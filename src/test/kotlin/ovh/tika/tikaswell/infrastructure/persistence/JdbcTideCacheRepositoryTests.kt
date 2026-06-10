@@ -41,9 +41,9 @@ class JdbcTideCacheRepositoryTests {
 		val saved = repository.save(cache)
 
 		assertThat(saved.id).isNotNull()
-		assertThat(repository.existsBySpotIdAndDateAndProvider(spotId, date, "Stormglass")).isTrue()
+		assertThat(repository.existsBySpotIdAndDateAndProvider(spotId, date, "api-maree.fr")).isTrue()
 
-		val persisted = repository.findBySpotIdAndDateAndProvider(spotId, date, "Stormglass")
+		val persisted = repository.findBySpotIdAndDateAndProvider(spotId, date, "api-maree.fr")
 
 		assertThat(persisted).isNotNull()
 		assertThat(persisted!!.stationName).isEqualTo("Saint-Nazaire")
@@ -67,7 +67,7 @@ class JdbcTideCacheRepositoryTests {
 			id = null,
 			spotId = spotId,
 			date = date,
-			providerName = "Stormglass",
+			providerName = "api-maree.fr",
 			fetchedAt = Instant.parse("2026-06-04T02:00:00Z"),
 			stationName = null,
 			stationDistanceKilometers = null,
@@ -80,7 +80,7 @@ class JdbcTideCacheRepositoryTests {
 
 		repository.save(unavailable)
 
-		val persisted = repository.findBySpotIdAndDateAndProvider(spotId, date, "Stormglass")!!
+		val persisted = repository.findBySpotIdAndDateAndProvider(spotId, date, "api-maree.fr")!!
 		assertThat(persisted.unavailableReason).isEqualTo(TideUnavailableReason.QUOTA_REACHED)
 		assertThat(persisted.unavailableMessage).isEqualTo("Quota provider atteint")
 		assertThat(persisted.points).isEmpty()
@@ -92,7 +92,7 @@ class JdbcTideCacheRepositoryTests {
 			id = null,
 			spotId = spotId,
 			date = date,
-			providerName = "Stormglass",
+			providerName = "api-maree.fr",
 			fetchedAt = Instant.parse("2026-06-04T01:00:00Z"),
 			stationName = "Saint-Nazaire",
 			stationDistanceKilometers = 12.4,

@@ -27,21 +27,24 @@ Ne jamais committer de vraie clé API dans le dépôt, même dans un exemple.
 | `TIKASWELL_SPOT_LONGITUDE` | Oui | `-2.15987` | Longitude du spot |
 | `OPEN_METEO_WEATHER_BASE_URL` | Non | `https://api.open-meteo.com` | API météo Open-Meteo |
 | `OPEN_METEO_MARINE_BASE_URL` | Non | `https://marine-api.open-meteo.com` | API marine Open-Meteo |
-| `STORMGLASS_BASE_URL` | Non | `https://api.stormglass.io` | API Stormglass |
-| `STORMGLASS_API_KEY` | Oui pour la marée | valeur privée saisie dans Portainer | Clé API Stormglass, jamais dans Git |
-| `TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY` | Non | `6` | Quota applicatif quotidien pour les appels marée |
+| `API_MAREE_BASE_URL` | Non | `https://api-maree.fr` | API marée |
+| `API_MAREE_API_KEY` | Oui pour la marée | valeur privée saisie dans Portainer | Clé API api-maree.fr, jamais dans Git |
+| `API_MAREE_SITE_ID` | Non | `saint-nazaire` | Site de marée utilisé pour le spot |
+| `API_MAREE_STEP_MINUTES` | Non | `10` | Pas de temps de la courbe de marée |
+| `API_MAREE_TIMEZONE` | Non | `Europe/Paris` | Fuseau horaire des requêtes marée |
+| `TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY` | Non | `120` | Quota applicatif quotidien pour les appels marée |
 | `TIKASWELL_TIDE_PREFETCH_ENABLED` | Non | `true` | Active le préchargement automatique du cache marée |
 | `TIKASWELL_TIDE_PREFETCH_CRON` | Non | `0 0 3 * * *` | Horaire du préchargement quotidien Spring, par défaut 03:00 |
 | `TIKASWELL_TIDE_PREFETCH_ZONE` | Non | `Europe/Paris` | Fuseau horaire utilisé par le scheduler marée |
 | `TIKASWELL_TIDE_PREFETCH_DAYS_AHEAD` | Non | `7` | Horizon quotidien préchargé: `7` signifie aujourd'hui jusqu'à J+7 inclus |
 | `TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD` | Non | `1` | Horizon préchargé au démarrage: `1` signifie aujourd'hui et demain |
 
-`STORMGLASS_API_KEY` doit être saisie uniquement dans les variables d'environnement de
+`API_MAREE_API_KEY` doit être saisie uniquement dans les variables d'environnement de
 Portainer. Elle ne doit pas être mise dans le compose, le README, une issue GitHub, un commit
 ou un log.
 
-Stormglass est réservé au contexte de marée. Open-Meteo reste la source météo/marine principale.
-Le plan gratuit Stormglass est très limité, donc l'application précharge un cache SQLite durable.
+api-maree.fr est réservé au contexte de marée. Open-Meteo reste la source météo/marine principale.
+Les hauteurs de marée sont stables pour une date donnée, donc l'application précharge un cache SQLite durable.
 Au démarrage, elle précharge seulement aujourd'hui et demain par défaut. Chaque jour à 03:00,
 elle complète ensuite la fenêtre glissante jusqu'à J+7, sans récupérer les jours déjà présents
 en cache.
@@ -53,8 +56,8 @@ La marée est lue en cache avant tout appel provider. Le cache est stocké dans 
 
 Comportement attendu :
 
-- au rendu du dashboard, l'application lit le cache et n'appelle pas Stormglass ;
-- au calcul du score, l'application lit le cache et n'appelle pas Stormglass ;
+- au rendu du dashboard, l'application lit le cache et n'appelle pas api-maree.fr ;
+- au calcul du score, l'application lit le cache et n'appelle pas api-maree.fr ;
 - au démarrage, le scheduler précharge aujourd'hui et demain par défaut ;
 - chaque jour à 03:00, le scheduler complète la fenêtre aujourd'hui -> J+7 ;
 - après chaque préchargement, le scheduler tente aussi de backfiller les dates passées des
@@ -64,15 +67,15 @@ Comportement attendu :
 
 États d'indisponibilité possibles dans l'IHM :
 
-- clé Stormglass absente ou refusée ;
+- clé api-maree.fr absente ou refusée ;
 - quota applicatif atteint pour la journée ;
-- provider Stormglass indisponible ;
+- provider api-maree.fr indisponible ;
 - date pas encore préchargée ;
 - cache existant mais incomplet avant réparation.
 
 Limites connues :
 
-- Stormglass n'est pas une autorité hydrographique locale ;
+- api-maree.fr diffuse des hauteurs indicatives dérivées de composantes harmoniques Ifremer / PREVIMER ;
 - le coefficient de marée n'est pas récupéré actuellement ;
 - les données peuvent être moins précises qu'une source locale officielle ;
 - les bouées sont volontairement laissées de côté pour l'instant ;
@@ -106,9 +109,12 @@ TIKASWELL_SPOT_LATITUDE=47.20744
 TIKASWELL_SPOT_LONGITUDE=-2.15987
 OPEN_METEO_WEATHER_BASE_URL=https://api.open-meteo.com
 OPEN_METEO_MARINE_BASE_URL=https://marine-api.open-meteo.com
-STORMGLASS_BASE_URL=https://api.stormglass.io
-STORMGLASS_API_KEY=
-TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY=6
+API_MAREE_BASE_URL=https://api-maree.fr
+API_MAREE_API_KEY=
+API_MAREE_SITE_ID=saint-nazaire
+API_MAREE_STEP_MINUTES=10
+API_MAREE_TIMEZONE=Europe/Paris
+TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY=120
 TIKASWELL_TIDE_PREFETCH_ENABLED=true
 TIKASWELL_TIDE_PREFETCH_CRON=0 0 3 * * *
 TIKASWELL_TIDE_PREFETCH_ZONE=Europe/Paris
@@ -116,18 +122,21 @@ TIKASWELL_TIDE_PREFETCH_DAYS_AHEAD=7
 TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD=1
 ```
 
-Pour `STORMGLASS_API_KEY`, remplacer la valeur vide directement dans Portainer par la vraie
+Pour `API_MAREE_API_KEY`, remplacer la valeur vide directement dans Portainer par la vraie
 clé privée. Ne pas la mettre dans le compose, le README, une issue GitHub, un commit ou un log.
 
-### Procédure Portainer Pour Stormglass
+### Procédure Portainer Pour api-maree.fr
 
 1. Ouvrir la stack TikaSwell dans Portainer.
 2. Vérifier que la stack pointe bien vers `ops/docker-compose.yml` sur la branche `main`.
 3. Ajouter ou corriger les variables d'environnement :
 
 ```text
-STORMGLASS_API_KEY=<valeur privée saisie uniquement dans Portainer>
-TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY=6
+API_MAREE_API_KEY=<valeur privée saisie uniquement dans Portainer>
+API_MAREE_SITE_ID=saint-nazaire
+API_MAREE_STEP_MINUTES=10
+API_MAREE_TIMEZONE=Europe/Paris
+TIKASWELL_TIDE_MAX_PROVIDER_CALLS_PER_DAY=120
 TIKASWELL_TIDE_PREFETCH_ENABLED=true
 TIKASWELL_TIDE_PREFETCH_CRON=0 0 3 * * *
 TIKASWELL_TIDE_PREFETCH_ZONE=Europe/Paris
@@ -139,8 +148,8 @@ TIKASWELL_TIDE_PREFETCH_STARTUP_DAYS_AHEAD=1
 5. Vérifier les logs au démarrage : une ligne `Préchargement marée démarrage` doit apparaître.
 6. Ouvrir l'IHM et vérifier la carte `Marée` :
    - hauteur d'eau affichée si le cache est complet ;
-   - phase montante/descendante ;
-   - prochaine pleine mer et prochaine basse mer ;
+   - provider affiché `api-maree.fr` ;
+   - phase et pleines/basses mers peuvent rester `n/d` tant que la détection depuis la courbe n'est pas livrée ;
    - message français clair si la marée reste indisponible.
 
 Pour un test radical en développement, supprimer le volume SQLite et recréer la stack force un

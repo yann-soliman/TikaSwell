@@ -20,9 +20,12 @@ tikaswell:
   open-meteo:
     weather-base-url: http://localhost/weather-test
     marine-base-url: http://localhost/marine-test
-  stormglass:
-    base-url: http://localhost/stormglass-test
+  api-maree:
+    base-url: http://localhost/api-maree-test
     api-key:
+    site-id: saint-nazaire
+    step-minutes: 10
+    timezone: Europe/Paris
   tide:
     max-provider-calls-per-day: 6
     prefetch:
