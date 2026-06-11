@@ -273,67 +273,53 @@ button:hover {
   font-size: clamp(1.6rem, 4vw, 2.6rem);
 }
 
-.conditions-matrix {
+.conditions-stack {
   display: grid;
-  grid-template-columns: minmax(88px, 0.95fr) repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.condition-band {
   min-width: 0;
-  border: 1px solid var(--line);
+}
+
+.condition-band h3 {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.condition-band dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.condition-band div {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(217, 208, 191, 0.82);
   background: #fffdf8;
 }
 
-.condition-axis,
-.condition-heading,
-.condition-row-label,
-.condition-value {
-  min-width: 0;
-  padding: 9px 8px;
-  border-right: 1px solid rgba(217, 208, 191, 0.72);
-  border-bottom: 1px solid rgba(217, 208, 191, 0.72);
+.condition-band dt {
+  color: var(--accent-dark);
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1.1;
+  text-transform: uppercase;
 }
 
-.condition-axis,
-.condition-heading {
-  color: var(--accent-dark);
-  font-size: 0.7rem;
+.condition-band dd {
+  margin: 5px 0 0;
+  color: var(--ink);
+  font-size: 1.03rem;
   font-weight: 900;
   line-height: 1.15;
-  text-transform: uppercase;
-}
-
-.condition-heading,
-.condition-value {
-  text-align: right;
-}
-
-.condition-row-label {
-  color: var(--muted);
-  font-size: 0.7rem;
-  font-weight: 900;
-  line-height: 1.2;
-  text-transform: uppercase;
-}
-
-.condition-value {
-  color: var(--ink);
-  font-size: 0.95rem;
-  font-weight: 900;
-  line-height: 1.2;
   overflow-wrap: anywhere;
-}
-
-.condition-value--empty {
-  color: var(--muted);
-}
-
-.condition-axis:nth-child(5n),
-.condition-heading:nth-child(5n),
-.condition-row-label:nth-child(5n),
-.condition-value:nth-child(5n) {
-  border-right: 0;
-}
-
-.conditions-matrix > :nth-last-child(-n + 5) {
-  border-bottom: 0;
 }
 
 .provider-error,
@@ -621,44 +607,12 @@ button:hover {
     padding: 16px;
   }
 
-  .conditions-matrix {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
-    border: 0;
-    background: transparent;
+  .conditions-stack {
+    gap: 12px;
   }
 
-  .condition-axis,
-  .condition-heading {
-    display: none;
-  }
-
-  .condition-row-label {
-    grid-column: 1 / -1;
-    margin-top: 2px;
-    padding: 0;
-    border: 0;
-    background: transparent;
-  }
-
-  .condition-value {
-    display: grid;
-    gap: 4px;
-    min-height: 62px;
-    padding: 9px 10px;
-    border: 1px solid rgba(217, 208, 191, 0.82);
-    background: #fffdf8;
-    font-size: 0.92rem;
-    text-align: left;
-  }
-
-  .condition-value::before {
-    content: attr(data-label);
-    color: var(--accent-dark);
-    font-size: 0.66rem;
-    font-weight: 900;
-    line-height: 1.1;
-    text-transform: uppercase;
+  .condition-band dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .panel-heading span {
@@ -686,7 +640,7 @@ button:hover {
     padding: 14px;
   }
 
-  .condition-value,
+  .condition-band div,
   .tide-grid div {
     padding: 9px 10px;
   }
