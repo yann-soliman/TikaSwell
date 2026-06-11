@@ -67,49 +67,87 @@
         <p class="provider-error" th:if="${conditionsError != null}">
           Conditions indisponibles pour le moment.
         </p>
-        <div class="conditions-table-wrap" th:if="${currentConditions != null}">
-          <table class="conditions-table">
-            <caption>Mesures météo et marine actuelles</caption>
-            <thead>
-              <tr>
-                <th scope="col">Mesure</th>
-                <th scope="col">Vent</th>
-                <th scope="col">Vagues</th>
-                <th scope="col">Houle</th>
-                <th scope="col">Mer du vent</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <th scope="row">Moyen / hauteur</th>
-                <td th:text="${currentConditions.windSpeed}">0 km/h</td>
-                <td th:text="${currentConditions.waveHeight}">n/d</td>
-                <td th:text="${currentConditions.swellWaveHeight}">n/d</td>
-                <td th:text="${currentConditions.windWaveHeight}">n/d</td>
-              </tr>
-              <tr>
-                <th scope="row">Rafales / période</th>
-                <td th:text="${currentConditions.windGust}">n/d</td>
-                <td th:text="${currentConditions.wavePeriod}">n/d</td>
-                <td th:text="${currentConditions.swellWavePeriod}">n/d</td>
-                <td th:text="${currentConditions.windWavePeriod}">n/d</td>
-              </tr>
-              <tr>
-                <th scope="row">Période pic</th>
-                <td>n/d</td>
-                <td th:text="${currentConditions.wavePeakPeriod}">n/d</td>
-                <td th:text="${currentConditions.swellWavePeakPeriod}">n/d</td>
-                <td th:text="${currentConditions.windWavePeakPeriod}">n/d</td>
-              </tr>
-              <tr>
-                <th scope="row">Direction</th>
-                <td th:text="${currentConditions.windDirection}">n/d</td>
-                <td th:text="${currentConditions.waveDirection}">n/d</td>
-                <td th:text="${currentConditions.swellWaveDirection}">n/d</td>
-                <td th:text="${currentConditions.windWaveDirection}">n/d</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="conditions-grid" th:if="${currentConditions != null}" aria-label="Mesures météo et marine actuelles">
+          <section class="condition-card">
+            <h3>Vent</h3>
+            <dl>
+              <div>
+                <dt>Moyen</dt>
+                <dd th:text="${currentConditions.windSpeed}">0 km/h</dd>
+              </div>
+              <div>
+                <dt>Rafales</dt>
+                <dd th:text="${currentConditions.windGust}">n/d</dd>
+              </div>
+              <div>
+                <dt>Direction</dt>
+                <dd th:text="${currentConditions.windDirection}">n/d</dd>
+              </div>
+            </dl>
+          </section>
+          <section class="condition-card">
+            <h3>Vagues</h3>
+            <dl>
+              <div>
+                <dt>Hauteur</dt>
+                <dd th:text="${currentConditions.waveHeight}">n/d</dd>
+              </div>
+              <div>
+                <dt>Période moyenne</dt>
+                <dd th:text="${currentConditions.wavePeriod}">n/d</dd>
+              </div>
+              <div>
+                <dt>Période pic</dt>
+                <dd th:text="${currentConditions.wavePeakPeriod}">n/d</dd>
+              </div>
+              <div>
+                <dt>Direction</dt>
+                <dd th:text="${currentConditions.waveDirection}">n/d</dd>
+              </div>
+            </dl>
+          </section>
+          <section class="condition-card">
+            <h3>Houle</h3>
+            <dl>
+              <div>
+                <dt>Hauteur</dt>
+                <dd th:text="${currentConditions.swellWaveHeight}">n/d</dd>
+              </div>
+              <div>
+                <dt>Période moyenne</dt>
+                <dd th:text="${currentConditions.swellWavePeriod}">n/d</dd>
+              </div>
+              <div>
+                <dt>Période pic</dt>
+                <dd th:text="${currentConditions.swellWavePeakPeriod}">n/d</dd>
+              </div>
+              <div>
+                <dt>Direction</dt>
+                <dd th:text="${currentConditions.swellWaveDirection}">n/d</dd>
+              </div>
+            </dl>
+          </section>
+          <section class="condition-card">
+            <h3>Mer du vent</h3>
+            <dl>
+              <div>
+                <dt>Hauteur</dt>
+                <dd th:text="${currentConditions.windWaveHeight}">n/d</dd>
+              </div>
+              <div>
+                <dt>Période moyenne</dt>
+                <dd th:text="${currentConditions.windWavePeriod}">n/d</dd>
+              </div>
+              <div>
+                <dt>Période pic</dt>
+                <dd th:text="${currentConditions.windWavePeakPeriod}">n/d</dd>
+              </div>
+              <div>
+                <dt>Direction</dt>
+                <dd th:text="${currentConditions.windWaveDirection}">n/d</dd>
+              </div>
+            </dl>
+          </section>
         </div>
       </article>
 
