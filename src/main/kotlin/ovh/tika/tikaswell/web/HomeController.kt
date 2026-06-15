@@ -347,12 +347,15 @@ data class CurrentConditionsView(
 	val windWaveDirection: String,
 	val providerName: String,
 	val observedAt: String,
+	val observedAtCompact: String,
 ) {
 	companion object {
 		private val observedAtFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy 'à' HH:mm")
+		private val observedAtCompactFormatter = DateTimeFormatter.ofPattern("dd MMM · HH:mm", java.util.Locale.FRANCE)
 
 		fun from(snapshot: ConditionSnapshot): CurrentConditionsView {
-			val observedAt = snapshot.timestamp.atZone(ZoneId.of("Europe/Paris")).format(observedAtFormatter)
+			val observedAtDateTime = snapshot.timestamp.atZone(ZoneId.of("Europe/Paris"))
+			val observedAt = observedAtDateTime.format(observedAtFormatter)
 			return CurrentConditionsView(
 				windSpeed = "${snapshot.windSpeedKmh.format(1)} km/h",
 				windGust = snapshot.windGustKmh?.let { "${it.format(1)} km/h" } ?: "n/d",
@@ -371,6 +374,7 @@ data class CurrentConditionsView(
 				windWaveDirection = snapshot.windWaveDirection?.let { "${it.degrees}°" } ?: "n/d",
 				providerName = snapshot.providerName,
 				observedAt = observedAt,
+				observedAtCompact = observedAtDateTime.format(observedAtCompactFormatter),
 			)
 		}
 	}

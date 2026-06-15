@@ -52,13 +52,14 @@
     <section class="hero-grid" aria-label="Conditions et estimation">
       <article class="panel score-card" aria-labelledby="score-title">
         <div class="panel-header">
-          <div>
-            <p class="panel-title" id="score-title">Conditions maintenant</p>
-            <p class="panel-kicker" th:if="${currentConditions != null}" th:text="'Donnée du ' + ${currentConditions.observedAt}">
-              Donnée du 04/06/2026 à 12:00
-            </p>
-          </div>
-          <details class="help-popover">
+          <span class="panel-title" id="score-title">Conditions maintenant</span>
+          <span class="eyebrow" th:if="${currentConditions != null}" th:text="${currentConditions.observedAtCompact}">
+            04 juin · 12:00
+          </span>
+        </div>
+
+        <div class="panel-body score-card__body">
+          <details class="help-popover score-help">
             <summary aria-label="Comment le score est calculé">?</summary>
             <div>
               <strong>Comment lire ce score ?</strong>
@@ -71,9 +72,7 @@
               </p>
             </div>
           </details>
-        </div>
 
-        <div class="panel-body score-card__body">
           <div th:if="${conditionsError != null}" class="state-card state-card--error">
             <span aria-hidden="true"></span>
             <div>
@@ -116,14 +115,14 @@
 
       <article class="panel metrics-card" aria-labelledby="conditions-title">
         <div class="panel-header">
-          <div>
-            <h2 class="panel-title" id="conditions-title">Conditions actuelles</h2>
-            <p class="panel-kicker" th:if="${currentConditions != null}" th:text="${currentConditions.providerName} + ' · Donnée du ' + ${currentConditions.observedAt}">
-              Open-Meteo · Donnée du 04/06/2026 à 12:00
-            </p>
-          </div>
-          <span class="panel-chip">Open-Meteo</span>
+          <h2 class="panel-title" id="conditions-title">Mesures en temps réel</h2>
+          <span class="eyebrow" th:if="${currentConditions != null}" th:text="${currentConditions.providerName} + ' · Marée SHOM'">
+            Open-Meteo · Marée SHOM
+          </span>
         </div>
+        <p class="sr-only" th:if="${currentConditions != null}" th:text="'Conditions actuelles · Donnée du ' + ${currentConditions.observedAt}">
+          Conditions actuelles · Donnée du 04/06/2026 à 12:00
+        </p>
 
         <p class="provider-error" th:if="${conditionsError != null}">
           Conditions indisponibles pour le moment.
