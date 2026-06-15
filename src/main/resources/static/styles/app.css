@@ -193,6 +193,7 @@ dd {
 
 .topbar__updated {
   text-align: right;
+  white-space: nowrap;
 }
 
 .topbar__updated strong {
@@ -220,7 +221,7 @@ dd {
   background: var(--foam);
   color: var(--ink);
   font-size: 0.76rem;
-  font-weight: 800;
+  font-weight: 500;
   white-space: nowrap;
 }
 
@@ -262,7 +263,7 @@ dd {
   border-radius: var(--radius);
   background: color-mix(in oklab, var(--foam) 88%, white);
   color: var(--ink);
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .hero-grid,
@@ -279,11 +280,12 @@ dd {
 }
 
 .insight-grid {
-  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.7fr);
+  grid-template-columns: 1fr;
 }
 
 .work-grid {
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+  align-items: start;
 }
 
 .panel {
@@ -322,7 +324,7 @@ h2.panel-title {
   margin-top: 4px;
   color: var(--muted);
   font-size: 0.76rem;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.35;
 }
 
@@ -351,9 +353,9 @@ h2.panel-title {
 
 .score-readout strong {
   color: var(--ink);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Source Serif 4", "Source Serif Pro", Georgia, serif;
   font-size: clamp(3.7rem, 8vw, 5.8rem);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 0.88;
 }
 
@@ -361,7 +363,7 @@ h2.panel-title {
   margin-bottom: 9px;
   color: var(--muted);
   font-size: 1.1rem;
-  font-weight: 900;
+  font-weight: 400;
 }
 
 .score-readout em {
@@ -376,7 +378,7 @@ h2.panel-title {
   color: var(--algae);
   font-size: 0.78rem;
   font-style: normal;
-  font-weight: 900;
+  font-weight: 500;
 }
 
 .score-readout em::before {
@@ -419,14 +421,14 @@ h2.panel-title {
   margin-top: 5px;
   color: var(--muted);
   font-size: 0.68rem;
-  font-weight: 800;
+  font-weight: 400;
 }
 
 .score-summary {
   margin-top: 16px;
   color: color-mix(in oklab, var(--text) 92%, transparent);
   font-size: 0.95rem;
-  font-weight: 650;
+  font-weight: 400;
   line-height: 1.55;
 }
 
@@ -434,56 +436,7 @@ h2.panel-title {
   margin-top: 8px;
   color: var(--muted);
   font-size: 0.82rem;
-  font-weight: 900;
-}
-
-.help-popover {
-  position: relative;
-}
-
-.score-help {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-}
-
-.help-popover summary {
-  display: grid;
-  width: 31px;
-  height: 31px;
-  place-items: center;
-  border: 1px solid var(--line-strong);
-  border-radius: 50%;
-  background: var(--surface);
-  color: var(--ink);
-  cursor: pointer;
-  font-weight: 950;
-  list-style: none;
-}
-
-.help-popover summary::-webkit-details-marker {
-  display: none;
-}
-
-.help-popover div {
-  position: absolute;
-  right: 0;
-  z-index: 5;
-  width: min(340px, calc(100vw - 40px));
-  margin-top: 10px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  box-shadow: var(--shadow);
-}
-
-.help-popover p {
-  margin-top: 8px;
-  color: var(--muted);
-  font-size: 0.86rem;
-  font-weight: 650;
-  line-height: 1.45;
+  font-weight: 500;
 }
 
 .state-card {
@@ -513,7 +466,7 @@ h2.panel-title {
   margin-top: 4px;
   color: var(--muted);
   font-size: 0.9rem;
-  font-weight: 650;
+  font-weight: 400;
   line-height: 1.45;
 }
 
@@ -530,7 +483,7 @@ h2.panel-title {
 .empty-copy {
   padding: 16px;
   color: var(--muted);
-  font-weight: 750;
+  font-weight: 500;
   line-height: 1.45;
 }
 
@@ -542,7 +495,6 @@ h2.panel-title {
 }
 
 .metric-tile,
-.condition-band dl div,
 .tide-grid div {
   min-width: 0;
   border: 1px solid var(--line);
@@ -555,15 +507,14 @@ h2.panel-title {
 }
 
 .metric-tile dt,
-.condition-band dt,
 .tide-grid dt,
 .session-tide dt,
 .similar-table th,
 label span {
   color: var(--muted);
   font-size: 0.69rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
@@ -581,43 +532,11 @@ label span {
   margin-top: 3px;
   color: var(--muted);
   font-size: 0.76rem;
-  font-weight: 850;
+  font-weight: 400;
 }
 
 .metric-tile--tide {
   background: color-mix(in oklab, var(--foam) 76%, var(--surface));
-}
-
-.condition-bands {
-  display: grid;
-  gap: 10px;
-  padding: 0 16px 16px;
-}
-
-.condition-band h3 {
-  margin: 0 0 6px;
-  color: var(--ink);
-  font-size: 0.74rem;
-  font-weight: 950;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.condition-band dl {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.condition-band dl div {
-  padding: 9px 10px;
-}
-
-.condition-band dd {
-  margin-top: 4px;
-  color: var(--text);
-  font-size: 0.94rem;
-  font-weight: 900;
 }
 
 .explanation-layout {
@@ -641,6 +560,7 @@ label span {
 .factor-row strong {
   color: var(--text);
   font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .factor-row > span {
@@ -670,7 +590,7 @@ label span {
   color: var(--muted);
   font-size: 0.8rem;
   font-style: normal;
-  font-weight: 800;
+  font-weight: 400;
   line-height: 1.25;
 }
 
@@ -682,12 +602,19 @@ label span {
 .explanation-copy p {
   color: var(--muted);
   font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: 400;
   line-height: 1.55;
 }
 
-.explanation-copy p + p {
-  margin-top: 12px;
+.explanation-copy ul {
+  display: grid;
+  gap: 6px;
+  margin: 16px 0 0;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  list-style: none;
 }
 
 .explanation-copy strong {
@@ -698,7 +625,7 @@ label span {
   margin-bottom: 12px;
   color: var(--algae);
   font-size: 0.84rem;
-  font-weight: 950;
+  font-weight: 600;
 }
 
 .tide-status--warning {
@@ -719,14 +646,14 @@ label span {
   margin-top: 5px;
   color: var(--ink);
   font-size: 0.98rem;
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .tide-station {
   margin-top: 12px;
   color: var(--muted);
   font-size: 0.82rem;
-  font-weight: 850;
+  font-weight: 400;
 }
 
 .table-wrap {
@@ -749,8 +676,15 @@ label span {
   padding: 12px;
   border-bottom: 1px solid color-mix(in oklab, var(--line) 82%, transparent);
   color: var(--text);
-  font-weight: 700;
+  font-weight: 400;
   vertical-align: middle;
+  white-space: normal;
+}
+
+.similar-table td:nth-child(1),
+.similar-table td:nth-child(2),
+.similar-table td:nth-child(3),
+.similar-table td:nth-child(4) {
   white-space: nowrap;
 }
 
@@ -768,7 +702,7 @@ label span {
   background: var(--surface);
   color: var(--ink);
   font-size: 0.78rem;
-  font-weight: 950;
+  font-weight: 600;
 }
 
 .similarity-bar {
@@ -790,7 +724,7 @@ label span {
   color: var(--muted);
   font-size: 0.75rem;
   font-style: normal;
-  font-weight: 900;
+  font-weight: 400;
   text-align: right;
 }
 
@@ -846,7 +780,7 @@ button {
   background: var(--ink);
   color: #fff;
   cursor: pointer;
-  font-weight: 950;
+  font-weight: 500;
 }
 
 button:hover {
@@ -865,7 +799,7 @@ button:hover {
   border: 1px dashed var(--line-strong);
   border-radius: var(--radius);
   color: var(--muted);
-  font-weight: 850;
+  font-weight: 500;
 }
 
 .session-list {
@@ -877,18 +811,60 @@ button:hover {
 
 .session-list li {
   display: grid;
-  grid-template-columns: 82px 1fr;
-  gap: 15px;
-  padding: 15px 16px;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+  padding: 12px 16px;
   border-top: 1px solid color-mix(in oklab, var(--line) 85%, transparent);
+}
+
+.session-rating-cell {
+  grid-column: span 2;
+}
+
+.session-rating-cell time {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.session-window-cell {
+  grid-column: span 3;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.session-condition-cell {
+  grid-column: span 3;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.session-notes-cell {
+  grid-column: span 4;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.session-window-cell p,
+.session-condition-cell p,
+.session-notes-cell p {
+  margin-top: 2px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .session-score {
   display: inline-flex;
   align-items: baseline;
   justify-content: center;
-  width: 74px;
-  min-height: 48px;
+  gap: 4px;
+  min-height: 30px;
+  padding: 4px 8px;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   background: var(--surface-2);
@@ -900,28 +876,15 @@ button:hover {
 }
 
 .session-score strong {
-  font-size: 1.55rem;
+  font-size: 1.125rem;
+  font-weight: 600;
   line-height: 1;
 }
 
 .session-score span {
   color: var(--muted);
-  font-size: 0.74rem;
-  font-weight: 900;
-}
-
-.session-content {
-  min-width: 0;
-}
-
-.session-title {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 14px;
-  margin-bottom: 9px;
-  color: var(--ink);
-  font-size: 0.94rem;
-  font-weight: 950;
+  font-size: 0.7rem;
+  font-weight: 400;
 }
 
 .session-tide {
@@ -935,55 +898,11 @@ button:hover {
   margin-top: 3px;
   color: var(--algae);
   font-size: 0.82rem;
-  font-weight: 950;
+  font-weight: 500;
 }
 
 .session-tide--warning dd {
   color: var(--danger);
-}
-
-.session-conditions {
-  display: grid;
-  gap: 4px;
-  margin-bottom: 8px;
-  padding: 9px 10px;
-  border: 1px solid color-mix(in oklab, var(--algae) 20%, transparent);
-  border-radius: calc(var(--radius) - 2px);
-  background: color-mix(in oklab, var(--foam) 70%, transparent);
-}
-
-.session-conditions span {
-  color: var(--algae);
-  font-size: 0.68rem;
-  font-weight: 950;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.session-conditions p {
-  color: var(--text);
-  font-size: 0.84rem;
-  font-weight: 800;
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-}
-
-.session-conditions--empty {
-  border-color: var(--line);
-  background: var(--surface);
-}
-
-.session-conditions--empty p {
-  color: var(--muted);
-}
-
-.session-content small {
-  display: block;
-  color: var(--muted);
-  font-size: 0.86rem;
-  font-weight: 700;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
 }
 
 .footer {
@@ -996,7 +915,7 @@ button:hover {
   border-top: 1px solid var(--line);
   color: var(--muted);
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: 400;
 }
 
 @media (min-width: 640px) {
@@ -1038,7 +957,6 @@ button:hover {
     width: min(100% - 24px, 1280px);
   }
 
-  .condition-band dl,
   .tide-grid,
   .field-grid,
   .factor-row {
@@ -1049,12 +967,31 @@ button:hover {
     min-height: 0;
   }
 
+  .topbar__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .topbar__updated {
+    flex: 1 0 100%;
+    text-align: left;
+  }
+
   .score-readout strong {
     font-size: clamp(3rem, 20vw, 4.8rem);
   }
 
-  .session-list li {
-    grid-template-columns: 1fr;
+  .session-rating-cell,
+  .session-window-cell,
+  .session-condition-cell,
+  .session-notes-cell {
+    grid-column: span 12;
+  }
+
+  .session-rating-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
 
   .similar-table td,
@@ -1071,7 +1008,6 @@ button:hover {
 
   .panel-body,
   .metrics-grid,
-  .condition-bands,
   .session-form,
   .session-list li {
     padding: 12px;

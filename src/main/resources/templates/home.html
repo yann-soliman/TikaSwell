@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TikaSwell - Tableau de bord surf</title>
   <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Source+Serif+4:wght@600&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" th:href="@{/styles/app.css}">
 </head>
 <body>
@@ -59,19 +62,16 @@
         </div>
 
         <div class="panel-body score-card__body">
-          <details class="help-popover score-help">
-            <summary aria-label="Comment le score est calculé">?</summary>
-            <div>
-              <strong>Comment lire ce score ?</strong>
-              <p>
-                Le score compare les conditions actuelles aux sessions déjà notées.
-                Les sessions les plus proches pèsent davantage dans l'estimation.
-              </p>
-              <p>
-                La confiance monte quand plusieurs sessions historiques ressemblent aux conditions du moment.
-              </p>
-            </div>
-          </details>
+          <div class="sr-only">
+            <strong>Comment lire ce score ?</strong>
+            <p>
+              Le score compare les conditions actuelles aux sessions déjà notées.
+              Les sessions les plus proches pèsent davantage dans l'estimation.
+            </p>
+            <p>
+              La confiance monte quand plusieurs sessions historiques ressemblent aux conditions du moment.
+            </p>
+          </div>
 
           <div th:if="${conditionsError != null}" class="state-card state-card--error">
             <span aria-hidden="true"></span>
@@ -168,25 +168,15 @@
           </div>
         </div>
 
-        <div class="condition-bands" th:if="${currentConditions != null}">
-          <section class="condition-band">
-            <h3>Rafales / période</h3>
-            <dl>
-              <div><dt>Vent</dt><dd th:text="${currentConditions.windGust}">25,0 km/h</dd></div>
-              <div><dt>Vagues</dt><dd th:text="${currentConditions.wavePeriod}">8,0 s</dd></div>
-              <div><dt>Houle</dt><dd th:text="${currentConditions.swellWavePeriod}">10,0 s</dd></div>
-              <div><dt>Mer du vent</dt><dd th:text="${currentConditions.windWavePeriod}">4,5 s</dd></div>
-            </dl>
-          </section>
-          <section class="condition-band">
-            <h3>Période pic</h3>
-            <dl>
-              <div><dt>Vent</dt><dd>n/d</dd></div>
-              <div><dt>Vagues</dt><dd th:text="${currentConditions.wavePeakPeriod}">11,0 s</dd></div>
-              <div><dt>Houle</dt><dd th:text="${currentConditions.swellWavePeakPeriod}">12,0 s</dd></div>
-              <div><dt>Mer du vent</dt><dd th:text="${currentConditions.windWavePeakPeriod}">5,5 s</dd></div>
-            </dl>
-          </section>
+        <div class="sr-only" th:if="${currentConditions != null}">
+          <p>Rafales / période</p>
+          <p th:text="${currentConditions.windGust} + ' · ' + ${currentConditions.wavePeriod} + ' · ' + ${currentConditions.swellWavePeriod} + ' · ' + ${currentConditions.windWavePeriod}">
+            25,0 km/h · 8,0 s · 10,0 s · 4,5 s
+          </p>
+          <p>Période pic</p>
+          <p th:text="${currentConditions.wavePeakPeriod} + ' · ' + ${currentConditions.swellWavePeakPeriod} + ' · ' + ${currentConditions.windWavePeakPeriod}">
+            11,0 s · 12,0 s · 5,5 s
+          </p>
         </div>
       </article>
     </section>
@@ -194,11 +184,8 @@
     <section class="insight-grid" aria-label="Explications et marée">
       <article class="panel explanation-panel" aria-labelledby="explanation-title">
         <div class="panel-header">
-          <div>
-            <h2 class="panel-title" id="explanation-title">Pourquoi ce score ?</h2>
-            <p class="panel-kicker">Pondération par similarité</p>
-          </div>
-          <span class="panel-chip" th:if="${currentScore != null}" th:text="${currentScore.confidence}">0 %</span>
+          <span class="panel-title" id="explanation-title">Pourquoi ce score ?</span>
+          <span class="eyebrow">Pondération par similarité</span>
         </div>
         <div class="panel-body explanation-layout">
           <div class="factor-list">
@@ -233,14 +220,16 @@
               Le score est basé sur une comparaison par similarité avec les sessions historiques les plus proches.
               Ce n'est pas une prévision magique : c'est la <strong>mémoire du spot</strong>.
             </p>
-            <p th:text="${scoreTideNote}">
-              La marée est ignorée dans la similarité faute de données exploitables.
-            </p>
+            <ul>
+              <li th:text="'· ' + ${#lists.size(scoreContributors)} + ' sessions similaires retenues'">· 4 sessions similaires retenues</li>
+              <li th:if="${currentScore != null and currentScore.hasScore}" th:text="'· Note moyenne pondérée : ' + ${currentScore.score} + ' / 10'">· Note moyenne pondérée : 7,75 / 10</li>
+              <li th:text="'· ' + ${scoreTideNote}">· La marée est ignorée dans la similarité faute de données exploitables.</li>
+            </ul>
           </div>
         </div>
       </article>
 
-      <article class="panel tide-panel" aria-labelledby="tide-title">
+      <article class="sr-only tide-panel" aria-labelledby="tide-title">
         <div class="panel-header">
           <div>
             <h2 class="panel-title" id="tide-title">Marée</h2>
@@ -272,11 +261,8 @@
     <section class="work-grid" aria-label="Sessions">
       <article class="panel similar-panel" aria-labelledby="contributors-title">
         <div class="panel-header">
-          <div>
-            <h2 class="panel-title" id="contributors-title">Sessions qui influencent le score</h2>
-            <p class="panel-kicker">Sessions historiques proches</p>
-          </div>
-          <span class="panel-chip" th:text="${#lists.size(scoreContributors)} + ' contribution(s)'">0 contribution</span>
+          <span class="panel-title" id="contributors-title">Sessions historiques proches</span>
+          <span class="eyebrow" th:text="${#lists.size(scoreContributors)} + ' sessions · seuil 75%'">4 sessions · seuil 75%</span>
         </div>
         <p class="empty-copy" th:if="${#lists.isEmpty(scoreContributors)}">
           Le score expliquera ses références dès que des sessions auront des conditions enregistrées.
@@ -289,6 +275,8 @@
                 <th>Fenêtre</th>
                 <th>Note</th>
                 <th>Similarité</th>
+                <th>Conditions</th>
+                <th>Notes</th>
               </tr>
             </thead>
             <tbody>
@@ -301,6 +289,8 @@
                     <i></i><em th:text="${contributor.similarity}">80 %</em>
                   </span>
                 </td>
+                <td th:text="${contributor.conditions}">1,1 m · 8 s · vent 12 km/h</td>
+                <td th:text="${contributor.notes}">Clean au montant</td>
               </tr>
             </tbody>
           </table>
@@ -309,10 +299,8 @@
 
       <article class="panel entry-panel" aria-labelledby="entry-title">
         <div class="panel-header">
-          <div>
-            <h2 class="panel-title" id="entry-title">Ajouter une session</h2>
-            <p class="panel-kicker">Saisie rapide</p>
-          </div>
+          <span class="panel-title" id="entry-title">Ajouter une session</span>
+          <span class="eyebrow">Saisie rapide</span>
         </div>
         <form class="session-form" th:action="@{/sessions}" th:object="${form}" method="post">
           <label>
@@ -342,7 +330,7 @@
 
           <label>
             <span>Notes</span>
-            <textarea rows="4" th:field="*{notes}" placeholder="Vent ressenti, fréquentation, marée, bancs de sable..."></textarea>
+            <textarea rows="3" th:field="*{notes}" placeholder="Ex. vagues propres au montant, peu de monde…"></textarea>
           </label>
 
           <button type="submit">Enregistrer la session</button>
@@ -352,11 +340,8 @@
 
     <section class="panel history-panel" aria-labelledby="history-title">
       <div class="panel-header">
-        <div>
-          <h2 class="panel-title" id="history-title">Historique récent</h2>
-          <p class="panel-kicker">Historique des sessions</p>
-        </div>
-        <span class="panel-chip" th:text="${#lists.size(sessions)} + ' enregistrée(s)'">0 enregistrée</span>
+        <span class="panel-title" id="history-title">Historique récent</span>
+        <span class="eyebrow" th:text="${#lists.size(sessions)} + ' dernières sessions'">4 dernières sessions</span>
       </div>
 
       <div class="empty-state" th:if="${#lists.isEmpty(sessions)}">
@@ -365,15 +350,29 @@
 
       <ol class="session-list" th:if="${!#lists.isEmpty(sessions)}">
         <li th:each="surfSession : ${sessions}">
-          <div class="session-score" th:classappend="${surfSession.rating >= 8} ? 'session-score--good'">
-            <strong th:text="${surfSession.rating}">8</strong>
-            <span>/10</span>
+          <div class="session-rating-cell">
+            <div class="session-score" th:classappend="${surfSession.rating >= 8} ? 'session-score--good'">
+              <strong th:text="${surfSession.rating}">8</strong>
+              <span>/10</span>
+            </div>
+            <time th:text="${surfSession.date}">04/06/2026</time>
           </div>
-          <div class="session-content">
-            <p class="session-title">
-              <time th:text="${surfSession.date}">04/06/2026</time>
-              <span th:text="${surfSession.timeWindow}">09:00 - 11:00</span>
+          <div class="session-window-cell">
+            <span class="eyebrow">Fenêtre</span>
+            <p th:text="${surfSession.timeWindow}">09:00 - 11:00</p>
+          </div>
+          <div class="session-condition-cell">
+            <span class="eyebrow">Conditions</span>
+            <p th:text="${surfSession.conditions.summary}">
+              Vent 18,0 km/h, rafales 25,0 km/h, dir. 260° · Vagues 1,1 m, période 8,0 s, dir. 245°
             </p>
+            <span class="sr-only" th:if="${surfSession.conditions.providerName != null}" th:text="${surfSession.conditions.providerName}">Open-Meteo</span>
+          </div>
+          <div class="session-notes-cell">
+            <span class="eyebrow">Notes</span>
+            <p th:text="${surfSession.notes ?: '—'}">Clean au montant</p>
+          </div>
+          <div class="sr-only">
             <dl class="session-tide" th:classappend="${!surfSession.tide.available} ? 'session-tide--warning'">
               <div>
                 <dt>Marée</dt>
@@ -390,13 +389,6 @@
                 <dd th:text="${surfSession.tide.previousLowTide} + ' -> ' + ${surfSession.tide.nextLowTide}">07:20 -> 18:55</dd>
               </div>
             </dl>
-            <div class="session-conditions" th:classappend="${!surfSession.conditions.captured} ? 'session-conditions--empty'">
-              <span th:if="${surfSession.conditions.providerName != null}" th:text="${surfSession.conditions.providerName}">Open-Meteo</span>
-              <p th:text="${surfSession.conditions.summary}">
-                Vent 18,0 km/h, rafales 25,0 km/h, dir. 260° · Vagues 1,1 m, période 8,0 s, dir. 245°
-              </p>
-            </div>
-            <small th:if="${surfSession.notes}" th:text="${surfSession.notes}">Notes</small>
           </div>
         </li>
       </ol>

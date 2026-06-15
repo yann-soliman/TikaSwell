@@ -143,7 +143,13 @@ class HomeController(
 		val sessionsById = sessions.mapNotNull { session -> session.id?.let { it to session } }.toMap()
 		return score.contributors.mapNotNull { contribution ->
 			sessionsById[contribution.sessionId]?.let { session ->
-				ScoreContributionView.from(contribution, session, zoneId)
+				ScoreContributionView.from(
+					contribution = contribution,
+					session = session,
+					zoneId = zoneId,
+					conditions = session.id?.let { conditionSnapshotRepository.findBySessionId(it) }.orEmpty()
+						.let(SessionConditionsView::from),
+				)
 			}
 		}
 	}
@@ -428,12 +434,19 @@ data class ScoreContributionView(
 	val rating: Int,
 	val similarity: String,
 	val similarityPercent: Int,
+	val conditions: String,
+	val notes: String,
 ) {
 	companion object {
 		private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 		private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-		fun from(contribution: ScoreContribution, session: SurfSession, zoneId: ZoneId): ScoreContributionView {
+		fun from(
+			contribution: ScoreContribution,
+			session: SurfSession,
+			zoneId: ZoneId,
+			conditions: SessionConditionsView,
+		): ScoreContributionView {
 			val startsAt = session.startsAt.atZone(zoneId)
 			val endsAt = session.endsAt.atZone(zoneId)
 			return ScoreContributionView(
@@ -442,6 +455,8 @@ data class ScoreContributionView(
 				rating = contribution.rating.value,
 				similarity = "${(contribution.similarity * 100).format(0)} %",
 				similarityPercent = (contribution.similarity * 100).roundToInt().coerceIn(0, 100),
+				conditions = conditions.summary,
+				notes = session.notes?.takeIf { it.isNotBlank() } ?: "—",
 			)
 		}
 	}

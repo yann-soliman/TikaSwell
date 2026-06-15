@@ -190,7 +190,7 @@ class HomeControllerTests {
 			.andExpect(content().string(containsString("Vent 18,0 km/h, rafales 25,0 km/h, dir. 260°")))
 			.andExpect(content().string(containsString("Vagues 1,1 m, période 8,0 s, dir. 245°")))
 			.andExpect(content().string(containsString("Score estimé")))
-			.andExpect(content().string(containsString("Sessions qui influencent le score")))
+			.andExpect(content().string(containsString("Sessions historiques proches")))
 			.andExpect(content().string(containsString("8")))
 	}
 
