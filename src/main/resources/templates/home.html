@@ -41,6 +41,10 @@
           <span aria-hidden="true"></span>
           <span th:text="${currentConditions.providerName}">Open-Meteo</span>
         </span>
+        <nav class="version-switch" aria-label="Changer de version du design">
+          <a class="is-active" href="/" aria-current="page">V1</a>
+          <a href="/v2">V2</a>
+        </nav>
         <a class="refresh-button" href="/" aria-label="Rafraîchir les données">
           <span aria-hidden="true"></span>
           Rafraîchir
@@ -303,6 +307,7 @@
           <span class="eyebrow">Saisie rapide</span>
         </div>
         <form class="session-form" th:action="@{/sessions}" th:object="${form}" method="post">
+          <input type="hidden" name="uiVersion" value="v1">
           <label>
             <span>Date</span>
             <input type="date" id="date" name="date" th:value="*{date}">

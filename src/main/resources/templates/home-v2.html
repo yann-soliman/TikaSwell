@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TikaSwell - Tableau de bord surf</title>
+  <meta name="description" content="Tableau de bord interne TikaSwell : verdict GO / NO-GO, score estimé et journal des sessions de surf.">
+  <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/styles/app-v2.css}">
+</head>
+<body>
+  <div class="orb orb--aqua" aria-hidden="true"></div>
+  <div class="orb orb--coral" aria-hidden="true"></div>
+
+  <header class="v2-topbar">
+    <div class="v2-topbar__inner">
+      <a class="v2-brand" href="/v2" aria-label="Accueil TikaSwell version 2">
+        <span class="v2-logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M2 13c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2"></path>
+            <path d="M2 17c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2"></path>
+          </svg>
+        </span>
+        <span>
+          <strong>TikaSwell</strong>
+          <small>Mémoire empirique du spot</small>
+        </span>
+      </a>
+
+      <div class="chip spot-chip">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+        <span th:text="${spot.name}">Ermitage</span>
+        <span class="muted">· La Réunion</span>
+      </div>
+
+      <div class="v2-topbar__actions">
+        <span class="chip live-chip">
+          <span></span>
+          En direct
+        </span>
+        <nav class="v2-switch" aria-label="Changer de version du design">
+          <a href="/">V1</a>
+          <a class="is-active" href="/v2" aria-current="page">V2</a>
+        </nav>
+        <a class="v2-refresh" href="/v2" aria-label="Rafraîchir les données">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path><path d="M3 21v-5h5"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg>
+          Rafraîchir
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <div class="ticker" th:if="${currentConditions != null}">
+    <div class="ticker__track">
+      <span><i></i> <span th:text="'Vent ' + ${currentConditions.windSpeed}">Vent 14 km/h</span></span>
+      <span><i></i> <span th:text="'Houle ' + ${currentConditions.swellWaveHeight} + ' @ ' + ${currentConditions.swellWavePeriod}">Houle 1,2 m @ 9,4 s</span></span>
+      <span><i></i> <span th:text="'Marée ' + (${currentTide != null and currentTide.available} ? ${currentTide.phase} : 'n/d')">Marée montante</span></span>
+      <span><i></i> <span th:text="${#lists.size(scoreContributors)} + ' sessions similaires retenues'">4 sessions similaires retenues</span></span>
+      <span><i></i> <span th:text="${currentScore != null and currentScore.hasScore} ? 'Score ' + ${currentScore.score} + ' / 10' : 'Score indisponible'">Score 7,8 / 10</span></span>
+      <span><i></i> <span th:text="'Spot · ' + ${spot.name}">Spot · Ermitage</span></span>
+      <span><i></i> <span th:text="'Vent ' + ${currentConditions.windSpeed}">Vent 14 km/h</span></span>
+      <span><i></i> <span th:text="'Houle ' + ${currentConditions.swellWaveHeight} + ' @ ' + ${currentConditions.swellWavePeriod}">Houle 1,2 m @ 9,4 s</span></span>
+      <span><i></i> <span th:text="'Marée ' + (${currentTide != null and currentTide.available} ? ${currentTide.phase} : 'n/d')">Marée montante</span></span>
+      <span><i></i> <span th:text="${#lists.size(scoreContributors)} + ' sessions similaires retenues'">4 sessions similaires retenues</span></span>
+      <span><i></i> <span th:text="${currentScore != null and currentScore.hasScore} ? 'Score ' + ${currentScore.score} + ' / 10' : 'Score indisponible'">Score 7,8 / 10</span></span>
+      <span><i></i> <span th:text="'Spot · ' + ${spot.name}">Spot · Ermitage</span></span>
+    </div>
+  </div>
+
+  <main class="v2-shell">
+    <p class="v2-flash" th:if="${message}" th:text="${message}">Session enregistrée</p>
+
+    <div class="state-preview">
+      <span class="eyebrow">Aperçu</span>
+      <span class="preview-pill is-active">Normal</span>
+      <span class="preview-pill">Données insuffisantes</span>
+      <span class="preview-pill">Erreur fournisseur</span>
+    </div>
+
+    <section class="hero-cards" aria-label="Verdict et saisie rapide">
+      <article class="glass verdict-card" th:if="${conditionsError == null and currentScore != null and currentScore.hasScore}">
+        <div class="verdict-card__glow" aria-hidden="true"></div>
+        <div class="verdict-head">
+          <span class="chip verdict-chip">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.9 5.8H20l-5 3.6 1.9 5.8-5-3.6-5 3.6L8.8 12.4l-5-3.6h6.2Z"></path></svg>
+            <span>Verdict</span>
+          </span>
+          <span class="eyebrow" th:if="${currentConditions != null}" th:text="${currentConditions.observedAtCompact}">15 juin · 08:42</span>
+        </div>
+        <h1>GO surfer</h1>
+        <p>
+          Fenêtre favorable maintenant. Conditions proches de
+          <strong th:text="${#lists.size(scoreContributors)}">4</strong>
+          bonnes sessions passées.
+        </p>
+        <div class="window-chips">
+          <span class="window-chip window-chip--good">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+            <strong>Idéale</strong>
+            <em>Maintenant</em>
+          </span>
+          <span class="window-chip window-chip--warn">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+            <strong>À revoir</strong>
+            <em th:text="${currentConditions != null} ? ${currentConditions.observedAtCompact} : 'n/d'">15 juin · 08:42</em>
+          </span>
+        </div>
+        <div class="wave-bars" aria-hidden="true">
+          <i style="height:40%"></i><i style="height:70%"></i><i style="height:90%"></i><i style="height:50%"></i><i style="height:80%"></i>
+          <i style="height:100%"></i><i style="height:60%"></i><i style="height:40%"></i><i style="height:70%"></i><i style="height:90%"></i>
+          <i style="height:50%"></i><i style="height:30%"></i><i style="height:60%"></i><i style="height:80%"></i><i style="height:50%"></i>
+        </div>
+      </article>
+
+      <article class="glass verdict-card verdict-card--warning" th:if="${conditionsError != null or currentScore == null or !currentScore.hasScore}">
+        <div class="verdict-head">
+          <span class="chip verdict-chip">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path></svg>
+            <span>Verdict</span>
+          </span>
+        </div>
+        <h1 th:text="${conditionsError != null} ? 'Indisponible' : 'Incertain'">Incertain</h1>
+        <p th:text="${conditionsError != null} ? 'Le fournisseur de données ne répond pas. Réessayez dans quelques minutes.' : 'Pas assez de sessions historiques similaires pour calculer un score fiable. Les conditions restent visibles.'">
+          Pas assez de sessions historiques similaires pour calculer un score fiable.
+        </p>
+      </article>
+
+      <article class="glass score-dial-card">
+        <span class="eyebrow">Score estimé</span>
+        <div class="score-dial" th:if="${currentScore != null and currentScore.hasScore}" th:style="'--score-percent: ' + ${currentScore.scorePercent}">
+          <svg viewBox="0 0 200 200" aria-hidden="true">
+            <defs>
+              <linearGradient id="dial-gradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="var(--aqua)"></stop>
+                <stop offset="50%" stop-color="var(--cyan)"></stop>
+                <stop offset="100%" stop-color="var(--lime)"></stop>
+              </linearGradient>
+            </defs>
+            <circle cx="100" cy="100" r="78" pathLength="100" class="dial-bg"></circle>
+            <circle cx="100" cy="100" r="78" pathLength="100" class="dial-value"></circle>
+          </svg>
+          <div>
+            <strong th:text="${currentScore.score}">7,8</strong>
+            <span>/ 10</span>
+          </div>
+        </div>
+        <div class="score-dial-empty" th:if="${currentScore == null or !currentScore.hasScore}">
+          <span>N / A</span>
+        </div>
+        <p th:if="${currentScore != null and currentScore.hasScore}">
+          <strong th:text="${currentScore.interpretation}">Prometteur</strong>
+          <span th:text="' · ' + ${#lists.size(scoreContributors)} + ' sessions similaires'"> · 4 sessions similaires</span>
+        </p>
+      </article>
+
+      <article class="glass quick-log">
+        <div class="quick-log__head">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+          <h2>Nouvelle session</h2>
+        </div>
+        <p>Enrichir la mémoire du spot en 10 secondes.</p>
+        <form class="quick-form" th:action="@{/sessions}" th:object="${form}" method="post">
+          <input type="hidden" name="uiVersion" value="v2">
+          <div class="quick-form__grid">
+            <label>
+              <span class="eyebrow">Date</span>
+              <input type="date" id="v2-date" name="date" th:value="*{date}" required>
+              <strong th:if="${#fields.hasErrors('date')}" th:errors="*{date}">Erreur de date</strong>
+            </label>
+            <label>
+              <span class="eyebrow">Note</span>
+              <select id="v2-rating" name="rating" required>
+                <option value="" th:selected="*{rating == null}">Note</option>
+                <option th:each="note : ${#numbers.sequence(1,10)}" th:value="${note}" th:text="${note} + ' / 10'" th:selected="${form.rating == note}">8 / 10</option>
+              </select>
+              <strong th:if="${#fields.hasErrors('rating')}" th:errors="*{rating}">Erreur de note</strong>
+            </label>
+          </div>
+          <div class="quick-form__grid">
+            <label>
+              <span class="eyebrow">Début</span>
+              <input type="time" id="v2-startTime" name="startTime" th:value="*{startTime}" required>
+              <strong th:if="${#fields.hasErrors('startTime')}" th:errors="*{startTime}">Erreur de début</strong>
+            </label>
+            <label>
+              <span class="eyebrow">Fin</span>
+              <input type="time" id="v2-endTime" name="endTime" th:value="*{endTime}" required>
+              <strong th:if="${#fields.hasErrors('endTime')}" th:errors="*{endTime}">Erreur de fin</strong>
+            </label>
+          </div>
+          <label>
+            <span class="eyebrow">Notes (optionnel)</span>
+            <textarea rows="2" th:field="*{notes}" placeholder="Vagues propres, peu de monde…"></textarea>
+          </label>
+          <button type="submit">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 12l2 2 4-4"></path><circle cx="12" cy="12" r="9"></circle></svg>
+            Enregistrer la session
+          </button>
+        </form>
+      </article>
+    </section>
+
+    <section class="live-section" aria-labelledby="live-title">
+      <div class="section-head">
+        <div>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-4l-3 8L9 4l-3 8H2"></path></svg>
+          <h2 id="live-title">Conditions en direct</h2>
+        </div>
+        <span class="eyebrow" th:if="${currentConditions != null}" th:text="'Mise à jour ' + ${currentConditions.observedAtCompact} + ' · ' + ${currentConditions.providerName}">
+          Mise à jour il y a 2 min · Open-Meteo
+        </span>
+      </div>
+      <p class="provider-error" th:if="${conditionsError != null}">Conditions indisponibles pour le moment.</p>
+      <div class="metric-grid-v2" th:if="${currentConditions != null}">
+        <article class="tile metric-v2">
+          <div><span class="eyebrow">Vent</span><svg viewBox="0 0 24 24"><path d="M3 8h12a3 3 0 1 0-3-3"></path><path d="M3 12h18"></path><path d="M3 16h12a3 3 0 1 1-3 3"></path></svg></div>
+          <p><strong th:text="${currentConditions.windSpeed}">14 km/h</strong></p>
+          <small th:text="${currentConditions.windDirection} + ' · rafales ' + ${currentConditions.windGust}">O · rafales 22</small>
+        </article>
+        <article class="tile metric-v2">
+          <div><span class="eyebrow">Vagues</span><svg viewBox="0 0 24 24"><path d="M2 13c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2"></path><path d="M2 17c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2"></path></svg></div>
+          <p><strong th:text="${currentConditions.waveHeight}">1,2 m</strong></p>
+          <small th:text="${currentConditions.waveDirection}">houle propre</small>
+        </article>
+        <article class="tile metric-v2">
+          <div><span class="eyebrow">Période</span><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 8L9 4l-3 8H2"></path></svg></div>
+          <p><strong th:text="${currentConditions.wavePeriod}">9,4 s</strong></p>
+          <small th:text="'pic ' + ${currentConditions.wavePeakPeriod}">pic 12,1 s</small>
+        </article>
+        <article class="tile metric-v2">
+          <div><span class="eyebrow">Houle</span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v4"></path><path d="M12 17v4"></path><path d="M3 12h4"></path><path d="M17 12h4"></path></svg></div>
+          <p><strong th:text="${currentConditions.swellWaveHeight}">ONO</strong></p>
+          <small th:text="${currentConditions.swellWaveDirection}">285°</small>
+        </article>
+        <article class="tile metric-v2">
+          <div><span class="eyebrow">Marée</span><svg viewBox="0 0 24 24"><path d="M12 3v18"></path><path d="M5 12h14"></path><path d="M5 20h14"></path><path d="M8 20c0-4 8-4 8 0"></path></svg></div>
+          <p><strong th:text="${currentTide != null and currentTide.available} ? ${currentTide.phase} : 'n/d'">Montante</strong></p>
+          <small th:if="${currentTide != null}" th:text="${currentTide.waterHeight} + ' · PM ' + ${currentTide.nextHighTide}">2,8 m · PM 11:18</small>
+        </article>
+        <article class="tile metric-v2">
+          <div><span class="eyebrow">Mer du vent</span><svg viewBox="0 0 24 24"><path d="M12 14a4 4 0 1 0-4-4"></path><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="M4.9 4.9l1.4 1.4"></path><path d="M17.7 17.7l1.4 1.4"></path></svg></div>
+          <p><strong th:text="${currentConditions.windWaveHeight}">21,4 °C</strong></p>
+          <small th:text="${currentConditions.windWaveDirection} + ' · ' + ${currentConditions.windWavePeriod}">air 23°C</small>
+        </article>
+      </div>
+      <div class="sr-only" th:if="${currentConditions != null}">
+        <p>Conditions actuelles · Donnée du <span th:text="${currentConditions.observedAt}">04/06/2026 à 12:00</span></p>
+        <p>Rafales / période</p>
+        <p th:text="${currentConditions.windGust} + ' · ' + ${currentConditions.wavePeriod} + ' · ' + ${currentConditions.swellWavePeriod} + ' · ' + ${currentConditions.windWavePeriod}">25,0 km/h · 8,0 s</p>
+        <p>Période pic</p>
+        <p th:text="${currentConditions.wavePeakPeriod} + ' · ' + ${currentConditions.swellWavePeakPeriod} + ' · ' + ${currentConditions.windWavePeakPeriod}">11,0 s</p>
+      </div>
+    </section>
+
+    <section class="analysis-grid" aria-label="Explication et sessions similaires">
+      <article class="glass explanation-v2">
+        <div class="section-head">
+          <div><h2>Pourquoi ce score ?</h2></div>
+          <span class="eyebrow">Pondération par similarité</span>
+        </div>
+        <div class="factor-bars">
+          <div class="factor-v2 factor-v2--good"><div><span>Hauteur de vagues</span><em th:text="${currentConditions != null} ? ${currentConditions.waveHeight} + ' · idéal' : 'n/d'">1,2 m · idéal</em></div><i style="--level:92%"></i></div>
+          <div class="factor-v2 factor-v2--good"><div><span>Période de houle</span><em th:text="${currentConditions != null} ? ${currentConditions.wavePeriod} + ' · long' : 'n/d'">9,4 s · long</em></div><i style="--level:82%"></i></div>
+          <div class="factor-v2 factor-v2--good"><div><span>Direction de houle</span><em th:text="${currentConditions != null} ? ${currentConditions.swellWaveDirection} + ' · favorable' : 'n/d'">ONO · favorable</em></div><i style="--level:78%"></i></div>
+          <div class="factor-v2 factor-v2--warn"><div><span>Vent</span><em th:text="${currentConditions != null} ? ${currentConditions.windSpeed} + ' · à surveiller' : 'n/d'">14 km/h · à surveiller</em></div><i style="--level:55%"></i></div>
+          <div class="factor-v2"><div><span>Marée</span><em th:text="${currentTide != null and currentTide.available} ? ${currentTide.phase} + ' · modérée' : ${scoreTideNote}">Montante · modérée</em></div><i style="--level:62%"></i></div>
+        </div>
+        <div class="stats-v2">
+          <div><strong th:text="${#lists.size(scoreContributors)}">4</strong><span>Sessions retenues</span></div>
+          <div><strong th:text="${currentScore != null and currentScore.hasScore} ? ${currentScore.score} : 'n/d'">7,75</strong><span>Moyenne pondérée</span></div>
+          <div><strong th:text="${currentScore != null} ? ${currentScore.confidence} : '0 %'">±0,8</strong><span>Confiance</span></div>
+        </div>
+      </article>
+
+      <article class="glass similar-v2">
+        <div class="section-head">
+          <div>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.9 5.8H20l-5 3.6 1.9 5.8-5-3.6-5 3.6L8.8 12.4l-5-3.6h6.2Z"></path></svg>
+            <h2>Sessions similaires</h2>
+          </div>
+          <span class="eyebrow" th:text="${#lists.size(scoreContributors)} + ' résultats · score ≥ 75 %'">4 résultats · score ≥ 75 %</span>
+        </div>
+        <p class="empty-copy-v2" th:if="${#lists.isEmpty(scoreContributors)}">Le score expliquera ses références dès que des sessions auront des conditions enregistrées.</p>
+        <div class="similar-card-grid" th:if="${!#lists.isEmpty(scoreContributors)}">
+          <article class="tile session-match" th:each="contributor : ${scoreContributors}">
+            <div class="session-match__top">
+              <div>
+                <strong th:text="${contributor.date}">12 mai</strong>
+                <span th:text="${contributor.timeWindow}">07:30-09:00</span>
+              </div>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M7 7h10v10"></path></svg>
+            </div>
+            <div class="session-match__scores">
+              <div><span class="eyebrow">Note</span><strong th:text="${contributor.rating}">8</strong><em>/10</em></div>
+              <div><span class="eyebrow">Similarité</span><strong th:text="${contributor.similarityPercent}">92</strong><em>%</em></div>
+            </div>
+            <div class="match-bar" th:style="'--level: ' + ${contributor.similarityPercent} + '%'"><i></i></div>
+            <p th:text="'« ' + ${contributor.notes} + ' »'">« Propre au montant »</p>
+            <small th:text="${contributor.conditions}">Vent 14 km/h · Vagues 1,2 m</small>
+          </article>
+        </div>
+      </article>
+    </section>
+
+    <section class="glass history-v2" aria-labelledby="journal-title">
+      <div class="section-head">
+        <div>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+          <h2 id="journal-title">Journal récent</h2>
+        </div>
+        <span class="eyebrow" th:text="${#lists.size(sessions)} + ' dernières sessions'">4 dernières sessions</span>
+      </div>
+      <div class="empty-state-v2" th:if="${#lists.isEmpty(sessions)}">Aucune session enregistrée pour le moment.</div>
+      <div class="history-table-wrap" th:if="${!#lists.isEmpty(sessions)}">
+        <table class="history-table-v2">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Fenêtre</th>
+              <th>Note</th>
+              <th>Visuel</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="surfSession : ${sessions}">
+              <td th:text="${surfSession.date}">10 juin</td>
+              <td th:text="${surfSession.timeWindow}">07:15-08:30</td>
+              <td><strong th:text="${surfSession.rating}">8</strong><span>/10</span></td>
+              <td>
+                <div class="rating-bars" th:style="'--rating: ' + ${surfSession.rating}">
+                  <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                </div>
+              </td>
+              <td th:text="${surfSession.notes ?: '—'}">Belle session matinale.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="sr-only" th:if="${!#lists.isEmpty(sessions)}">
+        <div th:each="surfSession : ${sessions}">
+          <p th:text="${surfSession.conditions.summary}">Conditions météo/marine non capturées</p>
+          <p th:if="${surfSession.conditions.providerName != null}" th:text="${surfSession.conditions.providerName}">Open-Meteo</p>
+          <p th:text="${surfSession.tide.available} ? ${surfSession.tide.waterHeight} + ' · ' + ${surfSession.tide.phase} : ${surfSession.tide.status}">Marée</p>
+          <p th:if="${surfSession.tide.available}" th:text="'Pleine mer ' + ${surfSession.tide.previousHighTide} + ' -> ' + ${surfSession.tide.nextHighTide}">Pleine mer</p>
+          <p th:if="${surfSession.tide.available}" th:text="'Basse mer ' + ${surfSession.tide.previousLowTide} + ' -> ' + ${surfSession.tide.nextLowTide}">Basse mer</p>
+        </div>
+      </div>
+    </section>
+
+    <article class="sr-only tide-v2" aria-labelledby="tide-title">
+      <h2 id="tide-title">Marée</h2>
+      <p th:if="${currentTide == null}">Marée indisponible sans conditions actuelles.</p>
+      <div th:if="${currentTide != null}">
+        <p th:text="${currentTide.status}">Marée issue du cache local</p>
+        <p>Hauteur <span th:text="${currentTide.waterHeight}">3,25 m</span></p>
+        <p>Phase <span th:text="${currentTide.phase}">Montante</span></p>
+        <p>Pleine mer précédente <span th:text="${currentTide.previousHighTide}">00:45</span></p>
+        <p>Pleine mer suivante <span th:text="${currentTide.nextHighTide}">12:40</span></p>
+        <p>Basse mer précédente <span th:text="${currentTide.previousLowTide}">07:20</span></p>
+        <p>Basse mer suivante <span th:text="${currentTide.nextLowTide}">18:55</span></p>
+        <p th:if="${currentTide.station != null}" th:text="${currentTide.station}">Saint-Nazaire · 12,4 km</p>
+      </div>
+    </article>
+
+    <footer class="v2-footer">
+      <span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+        <span th:text="'TikaSwell · Spot ' + ${spot.name}">TikaSwell · Spot Ermitage</span>
+      </span>
+      <span>Données Open-Meteo + SHOM</span>
+    </footer>
+  </main>
+</body>
+</html>

@@ -251,6 +251,34 @@ dd {
   border-radius: 50%;
 }
 
+.version-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 30px;
+  padding: 2px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.version-switch a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  min-height: 24px;
+  border-radius: calc(var(--radius) - 2px);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.version-switch a.is-active {
+  background: var(--ink);
+  color: var(--surface);
+}
+
 .shell {
   padding: 24px 0 36px;
 }

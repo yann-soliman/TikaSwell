@@ -59,28 +59,43 @@ class HomeController(
 	@GetMapping("/")
 	fun home(
 		@RequestParam(name = "saved", required = false) saved: String?,
+		@RequestParam(name = "ui", required = false, defaultValue = "v1") uiVersion: String,
 		model: Model,
 	): String {
 		if (saved == "1") {
 			model.addAttribute("message", "Session enregistrée")
 		}
-		populateHomeModel(model, SurfSessionForm.default())
-		return "home"
+		populateHomeModel(model, SurfSessionForm.default(), uiVersion.normalizedUiVersion())
+		return uiVersion.normalizedTemplate()
+	}
+
+	@GetMapping("/v2")
+	fun homeV2(
+		@RequestParam(name = "saved", required = false) saved: String?,
+		model: Model,
+	): String {
+		if (saved == "1") {
+			model.addAttribute("message", "Session enregistrée")
+		}
+		populateHomeModel(model, SurfSessionForm.default(), "v2")
+		return "home-v2"
 	}
 
 	@PostMapping("/sessions")
 	fun createSession(
 		@Valid @ModelAttribute("form") form: SurfSessionForm,
 		bindingResult: BindingResult,
+		@RequestParam(name = "uiVersion", required = false, defaultValue = "v1") uiVersion: String,
 		model: Model,
 	): String {
+		val normalizedUiVersion = uiVersion.normalizedUiVersion()
 		if (form.startTime != null && form.endTime != null && !form.startTime.isBefore(form.endTime)) {
 			bindingResult.rejectValue("endTime", "session.endTime.afterStart", "L'heure de fin doit être après l'heure de début")
 		}
 
 		if (bindingResult.hasErrors()) {
-			populateHomeModel(model, form)
-			return "home"
+			populateHomeModel(model, form, normalizedUiVersion)
+			return normalizedUiVersion.templateName()
 		}
 
 		val spot = spotProvider.initialSpot()
@@ -97,10 +112,14 @@ class HomeController(
 			),
 		)
 
-		return "redirect:/?saved=1"
+		return if (normalizedUiVersion == "v2") {
+			"redirect:/v2?saved=1"
+		} else {
+			"redirect:/?saved=1"
+		}
 	}
 
-	private fun populateHomeModel(model: Model, form: SurfSessionForm) {
+	private fun populateHomeModel(model: Model, form: SurfSessionForm, uiVersion: String) {
 		val spot = spotProvider.initialSpot()
 		val sessions = surfSessionService.listForInitialSpot(spot.id)
 		val currentConditions = runCatching { conditionsProvider.fetchCurrentConditions(spot) }
@@ -129,6 +148,7 @@ class HomeController(
 		model.addAttribute("currentScore", currentScore?.let(CurrentScoreView::from))
 		model.addAttribute("scoreContributors", scoreContributors(currentScore, sessions))
 		model.addAttribute("scoreTideNote", scoreTideNote(currentScore, currentTide))
+		model.addAttribute("uiVersion", uiVersion)
 	}
 
 	private fun tideContext(spot: Spot, instant: Instant): TideContextView {
@@ -160,6 +180,15 @@ class HomeController(
 			currentTide?.available == true -> "La marée est disponible, mais ignorée faute de données historiques comparables."
 			else -> "La marée est ignorée dans la similarité faute de données exploitables."
 		}
+
+	private fun String.normalizedTemplate(): String =
+		normalizedUiVersion().templateName()
+
+	private fun String.normalizedUiVersion(): String =
+		if (equals("v2", ignoreCase = true)) "v2" else "v1"
+
+	private fun String.templateName(): String =
+		if (this == "v2") "home-v2" else "home"
 }
 
 data class SurfSessionForm(
