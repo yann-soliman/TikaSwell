@@ -42,3 +42,6 @@ out/
 ### Local runtime data ###
 data/*
 !data/.gitkeep
+
+### Local design exports ###
+projects/

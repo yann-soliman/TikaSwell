@@ -378,18 +378,43 @@ data class CurrentConditionsView(
 
 data class CurrentScoreView(
 	val score: String,
+	val scorePercent: Int,
+	val interpretation: String,
+	val summary: String,
 	val confidence: String,
 	val hasScore: Boolean,
 	val tideUsed: Boolean,
 ) {
 	companion object {
-		fun from(score: CurrentScore): CurrentScoreView =
-			CurrentScoreView(
-				score = score.score?.format(1) ?: "Pas assez d'historique",
+		fun from(score: CurrentScore): CurrentScoreView {
+			val numericScore = score.score
+			val contributorCount = score.contributors.size
+			return CurrentScoreView(
+				score = numericScore?.format(1) ?: "Pas assez d'historique",
+				scorePercent = numericScore?.let { ((it / 10.0) * 100).roundToInt().coerceIn(0, 100) } ?: 0,
+				interpretation = numericScore.interpretation(),
+				summary = numericScore.summary(contributorCount),
 				confidence = "${(score.confidence * 100).format(0)} %",
-				hasScore = score.score != null,
+				hasScore = numericScore != null,
 				tideUsed = score.tideUsed,
 			)
+		}
+
+		private fun Double?.interpretation(): String =
+			when {
+				this == null -> "Score indisponible"
+				this >= 8.0 -> "Très prometteur"
+				this >= 6.5 -> "Prometteur"
+				this >= 5.0 -> "À surveiller"
+				else -> "Peu engageant"
+			}
+
+		private fun Double?.summary(contributorCount: Int): String =
+			if (this == null || contributorCount == 0) {
+				"Pas encore assez de sessions historiques comparables pour estimer le spot."
+			} else {
+				"Conditions proches de $contributorCount session(s) passée(s). Le score reste empirique et dépend de ton historique."
+			}
 	}
 }
 
@@ -398,6 +423,7 @@ data class ScoreContributionView(
 	val timeWindow: String,
 	val rating: Int,
 	val similarity: String,
+	val similarityPercent: Int,
 ) {
 	companion object {
 		private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
@@ -411,6 +437,7 @@ data class ScoreContributionView(
 				timeWindow = "${startsAt.format(timeFormatter)} - ${endsAt.format(timeFormatter)}",
 				rating = contribution.rating.value,
 				similarity = "${(contribution.similarity * 100).format(0)} %",
+				similarityPercent = (contribution.similarity * 100).roundToInt().coerceIn(0, 100),
 			)
 		}
 	}

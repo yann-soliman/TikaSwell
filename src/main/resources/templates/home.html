@@ -3,35 +3,61 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TikaSwell</title>
+  <title>TikaSwell - Tableau de bord surf</title>
   <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
   <link rel="stylesheet" th:href="@{/styles/app.css}">
 </head>
 <body>
-  <main class="shell">
-    <section class="masthead" aria-labelledby="page-title">
-      <div>
-        <p class="eyebrow">Carnet de surf</p>
-        <h1 id="page-title" th:text="${spot.name}">Initial spot</h1>
-      </div>
-      <dl class="spot-meta" aria-label="Coordonnées du spot">
-        <div>
-          <dt>Latitude</dt>
-          <dd th:text="${#numbers.formatDecimal(spot.latitude, 1, 4)}">0.0000</dd>
-        </div>
-        <div>
-          <dt>Longitude</dt>
-          <dd th:text="${#numbers.formatDecimal(spot.longitude, 1, 4)}">0.0000</dd>
-        </div>
-      </dl>
-    </section>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="/" aria-label="Accueil TikaSwell">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <path d="M2 13c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2"></path>
+            <path d="M2 17c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2"></path>
+            <path d="M2 21c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2"></path>
+          </svg>
+        </span>
+        <span>
+          <strong>TikaSwell</strong>
+          <small>Mémoire empirique d'un spot</small>
+        </span>
+      </a>
 
+      <div class="topbar__spot">
+        <span class="eyebrow">Spot</span>
+        <strong th:text="${spot.name}">Initial spot</strong>
+      </div>
+
+      <div class="topbar__actions">
+        <div class="topbar__updated" th:if="${currentConditions != null}">
+          <span class="eyebrow">Dernière mise à jour</span>
+          <strong th:text="${currentConditions.observedAt}">04/06/2026 à 12:00</strong>
+        </div>
+        <span class="source-badge" th:if="${currentConditions != null}">
+          <span aria-hidden="true"></span>
+          <span th:text="${currentConditions.providerName}">Open-Meteo</span>
+        </span>
+        <a class="refresh-button" href="/" aria-label="Rafraîchir les données">
+          <span aria-hidden="true"></span>
+          Rafraîchir
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
     <p class="flash" th:if="${message}" th:text="${message}">Session enregistrée</p>
 
-    <section class="dashboard" aria-label="Conditions et score">
-      <article class="panel score-panel">
-        <div class="score-heading">
-          <p class="eyebrow">Score estimé</p>
+    <section class="hero-grid" aria-label="Conditions et estimation">
+      <article class="panel score-card" aria-labelledby="score-title">
+        <div class="panel-header">
+          <div>
+            <p class="panel-title" id="score-title">Conditions maintenant</p>
+            <p class="panel-kicker" th:if="${currentConditions != null}" th:text="'Donnée du ' + ${currentConditions.observedAt}">
+              Donnée du 04/06/2026 à 12:00
+            </p>
+          </div>
           <details class="help-popover">
             <summary aria-label="Comment le score est calculé">?</summary>
             <div>
@@ -46,152 +72,196 @@
             </div>
           </details>
         </div>
-        <div class="score-value" th:if="${currentScore != null}" th:classappend="${!currentScore.hasScore} ? 'score-value--empty'">
-          <strong th:text="${currentScore.score}">Pas assez d'historique</strong>
-          <span th:if="${currentScore.hasScore}">/10</span>
+
+        <div class="panel-body score-card__body">
+          <div th:if="${conditionsError != null}" class="state-card state-card--error">
+            <span aria-hidden="true"></span>
+            <div>
+              <strong>Conditions temporairement indisponibles</strong>
+              <p>Le fournisseur de données ne répond pas. Réessaie dans quelques minutes.</p>
+            </div>
+          </div>
+
+          <div th:if="${conditionsError == null and currentScore != null and currentScore.hasScore}">
+            <p class="eyebrow">Score estimé</p>
+            <div class="score-readout">
+              <strong th:text="${currentScore.score}">7,8</strong>
+              <span>/ 10</span>
+              <em th:text="${currentScore.interpretation}">Prometteur</em>
+            </div>
+            <div class="score-bar" th:style="'--score-percent: ' + ${currentScore.scorePercent} + '%'">
+              <span></span>
+              <i style="left: 25%"></i>
+              <i style="left: 50%"></i>
+              <i style="left: 75%"></i>
+            </div>
+            <div class="score-scale" aria-hidden="true">
+              <span>0</span><span>2,5</span><span>5</span><span>7,5</span><span>10</span>
+            </div>
+            <p class="score-summary" th:text="${currentScore.summary}">
+              Conditions proches de 4 bonnes sessions passées.
+            </p>
+            <p class="score-confidence" th:text="'Confiance : ' + ${currentScore.confidence}">Confiance : 0 %</p>
+          </div>
+
+          <div th:if="${conditionsError == null and (currentScore == null or !currentScore.hasScore)}" class="state-card">
+            <span aria-hidden="true"></span>
+            <div>
+              <strong>Score indisponible</strong>
+              <p>Pas encore assez de sessions historiques similaires pour estimer le spot.</p>
+            </div>
+          </div>
         </div>
-        <div class="score-value score-value--empty" th:if="${currentScore == null}">
-          <strong>Indisponible</strong>
-        </div>
-        <p class="score-detail" th:if="${currentScore != null}" th:text="'Confiance : ' + ${currentScore.confidence}">Confiance : 0 %</p>
-        <p class="score-detail score-detail--note" th:text="${scoreTideNote}">
-          La marée est ignorée dans la similarité faute de données exploitables.
-        </p>
       </article>
 
-      <article class="panel conditions-panel">
-        <div class="panel-heading">
-          <h2>Conditions actuelles</h2>
-          <span th:if="${currentConditions != null}" th:text="${currentConditions.providerName} + ' · Donnée du ' + ${currentConditions.observedAt}">Open-Meteo · Donnée du 04/06/2026 à 12:00</span>
+      <article class="panel metrics-card" aria-labelledby="conditions-title">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title" id="conditions-title">Conditions actuelles</h2>
+            <p class="panel-kicker" th:if="${currentConditions != null}" th:text="${currentConditions.providerName} + ' · Donnée du ' + ${currentConditions.observedAt}">
+              Open-Meteo · Donnée du 04/06/2026 à 12:00
+            </p>
+          </div>
+          <span class="panel-chip">Open-Meteo</span>
         </div>
+
         <p class="provider-error" th:if="${conditionsError != null}">
           Conditions indisponibles pour le moment.
         </p>
-        <div class="conditions-stack" th:if="${currentConditions != null}" aria-label="Mesures météo et marine actuelles">
-          <section class="condition-band">
-            <h3>Moyen / hauteur</h3>
-            <dl>
-              <div>
-                <dt>Vent</dt>
-                <dd th:text="${currentConditions.windSpeed}">0 km/h</dd>
-              </div>
-              <div>
-                <dt>Vagues</dt>
-                <dd th:text="${currentConditions.waveHeight}">n/d</dd>
-              </div>
-              <div>
-                <dt>Houle</dt>
-                <dd th:text="${currentConditions.swellWaveHeight}">n/d</dd>
-              </div>
-              <div>
-                <dt>Mer du vent</dt>
-                <dd th:text="${currentConditions.windWaveHeight}">n/d</dd>
-              </div>
-            </dl>
-          </section>
+
+        <div class="metrics-grid" th:if="${currentConditions != null}" aria-label="Mesures météo et marine actuelles">
+          <div class="metric-tile">
+            <dt>Vent</dt>
+            <dd th:text="${currentConditions.windSpeed}">18,0 km/h</dd>
+            <small th:text="${currentConditions.windDirection}">260°</small>
+          </div>
+          <div class="metric-tile">
+            <dt>Rafales</dt>
+            <dd th:text="${currentConditions.windGust}">25,0 km/h</dd>
+          </div>
+          <div class="metric-tile">
+            <dt>Vagues</dt>
+            <dd th:text="${currentConditions.waveHeight}">1,1 m</dd>
+            <small th:text="${currentConditions.waveDirection}">245°</small>
+          </div>
+          <div class="metric-tile">
+            <dt>Période moyenne</dt>
+            <dd th:text="${currentConditions.wavePeriod}">8,0 s</dd>
+          </div>
+          <div class="metric-tile">
+            <dt>Période pic</dt>
+            <dd th:text="${currentConditions.wavePeakPeriod}">11,0 s</dd>
+          </div>
+          <div class="metric-tile">
+            <dt>Houle</dt>
+            <dd th:text="${currentConditions.swellWaveHeight}">1,0 m</dd>
+            <small th:text="${currentConditions.swellWaveDirection}">250°</small>
+          </div>
+          <div class="metric-tile">
+            <dt>Mer du vent</dt>
+            <dd th:text="${currentConditions.windWaveHeight}">0,4 m</dd>
+            <small th:text="${currentConditions.windWaveDirection}">270°</small>
+          </div>
+          <div class="metric-tile metric-tile--tide">
+            <dt>Marée</dt>
+            <dd th:text="${currentTide != null and currentTide.available} ? ${currentTide.phase} : 'n/d'">Montante</dd>
+            <small th:if="${currentTide != null}" th:text="${currentTide.waterHeight}">3,25 m</small>
+          </div>
+        </div>
+
+        <div class="condition-bands" th:if="${currentConditions != null}">
           <section class="condition-band">
             <h3>Rafales / période</h3>
             <dl>
-              <div>
-                <dt>Vent</dt>
-                <dd th:text="${currentConditions.windGust}">n/d</dd>
-              </div>
-              <div>
-                <dt>Vagues</dt>
-                <dd th:text="${currentConditions.wavePeriod}">n/d</dd>
-              </div>
-              <div>
-                <dt>Houle</dt>
-                <dd th:text="${currentConditions.swellWavePeriod}">n/d</dd>
-              </div>
-              <div>
-                <dt>Mer du vent</dt>
-                <dd th:text="${currentConditions.windWavePeriod}">n/d</dd>
-              </div>
+              <div><dt>Vent</dt><dd th:text="${currentConditions.windGust}">25,0 km/h</dd></div>
+              <div><dt>Vagues</dt><dd th:text="${currentConditions.wavePeriod}">8,0 s</dd></div>
+              <div><dt>Houle</dt><dd th:text="${currentConditions.swellWavePeriod}">10,0 s</dd></div>
+              <div><dt>Mer du vent</dt><dd th:text="${currentConditions.windWavePeriod}">4,5 s</dd></div>
             </dl>
           </section>
           <section class="condition-band">
             <h3>Période pic</h3>
             <dl>
-              <div>
-                <dt>Vent</dt>
-                <dd>n/d</dd>
-              </div>
-              <div>
-                <dt>Vagues</dt>
-                <dd th:text="${currentConditions.wavePeakPeriod}">n/d</dd>
-              </div>
-              <div>
-                <dt>Houle</dt>
-                <dd th:text="${currentConditions.swellWavePeakPeriod}">n/d</dd>
-              </div>
-              <div>
-                <dt>Mer du vent</dt>
-                <dd th:text="${currentConditions.windWavePeakPeriod}">n/d</dd>
-              </div>
-            </dl>
-          </section>
-          <section class="condition-band">
-            <h3>Direction</h3>
-            <dl>
-              <div>
-                <dt>Vent</dt>
-                <dd th:text="${currentConditions.windDirection}">n/d</dd>
-              </div>
-              <div>
-                <dt>Vagues</dt>
-                <dd th:text="${currentConditions.waveDirection}">n/d</dd>
-              </div>
-              <div>
-                <dt>Houle</dt>
-                <dd th:text="${currentConditions.swellWaveDirection}">n/d</dd>
-              </div>
-              <div>
-                <dt>Mer du vent</dt>
-                <dd th:text="${currentConditions.windWaveDirection}">n/d</dd>
-              </div>
+              <div><dt>Vent</dt><dd>n/d</dd></div>
+              <div><dt>Vagues</dt><dd th:text="${currentConditions.wavePeakPeriod}">11,0 s</dd></div>
+              <div><dt>Houle</dt><dd th:text="${currentConditions.swellWavePeakPeriod}">12,0 s</dd></div>
+              <div><dt>Mer du vent</dt><dd th:text="${currentConditions.windWavePeakPeriod}">5,5 s</dd></div>
             </dl>
           </section>
         </div>
       </article>
+    </section>
+
+    <section class="insight-grid" aria-label="Explications et marée">
+      <article class="panel explanation-panel" aria-labelledby="explanation-title">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title" id="explanation-title">Pourquoi ce score ?</h2>
+            <p class="panel-kicker">Pondération par similarité</p>
+          </div>
+          <span class="panel-chip" th:if="${currentScore != null}" th:text="${currentScore.confidence}">0 %</span>
+        </div>
+        <div class="panel-body explanation-layout">
+          <div class="factor-list">
+            <div class="factor-row factor-row--good">
+              <strong>Hauteur de vagues</strong>
+              <span><i style="width: 86%"></i></span>
+              <em>Très favorable</em>
+            </div>
+            <div class="factor-row factor-row--good">
+              <strong>Période</strong>
+              <span><i style="width: 74%"></i></span>
+              <em>Favorable</em>
+            </div>
+            <div class="factor-row factor-row--good">
+              <strong>Direction de houle</strong>
+              <span><i style="width: 68%"></i></span>
+              <em>Comparée aux bonnes sessions</em>
+            </div>
+            <div class="factor-row factor-row--warn">
+              <strong>Vent</strong>
+              <span><i style="width: 52%"></i></span>
+              <em>À surveiller</em>
+            </div>
+            <div class="factor-row">
+              <strong>Marée</strong>
+              <span><i style="width: 46%"></i></span>
+              <em th:text="${scoreTideNote}">Influence selon données disponibles</em>
+            </div>
+          </div>
+          <div class="explanation-copy">
+            <p>
+              Le score est basé sur une comparaison par similarité avec les sessions historiques les plus proches.
+              Ce n'est pas une prévision magique : c'est la <strong>mémoire du spot</strong>.
+            </p>
+            <p th:text="${scoreTideNote}">
+              La marée est ignorée dans la similarité faute de données exploitables.
+            </p>
+          </div>
+        </div>
+      </article>
 
       <article class="panel tide-panel" aria-labelledby="tide-title">
-        <div class="panel-heading">
-          <h2 id="tide-title">Marée</h2>
-          <span th:if="${currentTide != null}" th:text="${currentTide.providerName}">api-maree.fr</span>
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title" id="tide-title">Marée</h2>
+            <p class="panel-kicker" th:if="${currentTide != null}" th:text="${currentTide.providerName}">api-maree.fr</p>
+          </div>
         </div>
         <p class="provider-error" th:if="${currentTide == null}">
           Marée indisponible sans conditions actuelles.
         </p>
-        <div th:if="${currentTide != null}">
+        <div class="panel-body" th:if="${currentTide != null}">
           <p class="tide-status" th:classappend="${!currentTide.available} ? 'tide-status--warning'" th:text="${currentTide.status}">
             Marée issue du cache local
           </p>
           <dl class="tide-grid">
-            <div>
-              <dt>Hauteur</dt>
-              <dd th:text="${currentTide.waterHeight}">3,20 m</dd>
-            </div>
-            <div>
-              <dt>Phase</dt>
-              <dd th:text="${currentTide.phase}">Montante</dd>
-            </div>
-            <div>
-              <dt>Pleine mer précédente</dt>
-              <dd th:text="${currentTide.previousHighTide}">00:45</dd>
-            </div>
-            <div>
-              <dt>Pleine mer suivante</dt>
-              <dd th:text="${currentTide.nextHighTide}">12:40</dd>
-            </div>
-            <div>
-              <dt>Basse mer précédente</dt>
-              <dd th:text="${currentTide.previousLowTide}">07:00</dd>
-            </div>
-            <div>
-              <dt>Basse mer suivante</dt>
-              <dd th:text="${currentTide.nextLowTide}">18:55</dd>
-            </div>
+            <div><dt>Hauteur</dt><dd th:text="${currentTide.waterHeight}">3,25 m</dd></div>
+            <div><dt>Phase</dt><dd th:text="${currentTide.phase}">Montante</dd></div>
+            <div><dt>Pleine mer précédente</dt><dd th:text="${currentTide.previousHighTide}">00:45</dd></div>
+            <div><dt>Pleine mer suivante</dt><dd th:text="${currentTide.nextHighTide}">12:40</dd></div>
+            <div><dt>Basse mer précédente</dt><dd th:text="${currentTide.previousLowTide}">07:20</dd></div>
+            <div><dt>Basse mer suivante</dt><dd th:text="${currentTide.nextLowTide}">18:55</dd></div>
           </dl>
           <p class="tide-station" th:if="${currentTide.station != null}" th:text="${currentTide.station}">
             Saint-Nazaire · 12,4 km
@@ -200,110 +270,143 @@
       </article>
     </section>
 
-    <div class="workspace">
-      <section class="panel entry-panel" aria-labelledby="entry-title">
-        <h2 id="entry-title">Ajouter une session</h2>
+    <section class="work-grid" aria-label="Sessions">
+      <article class="panel similar-panel" aria-labelledby="contributors-title">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title" id="contributors-title">Sessions qui influencent le score</h2>
+            <p class="panel-kicker">Sessions historiques proches</p>
+          </div>
+          <span class="panel-chip" th:text="${#lists.size(scoreContributors)} + ' contribution(s)'">0 contribution</span>
+        </div>
+        <p class="empty-copy" th:if="${#lists.isEmpty(scoreContributors)}">
+          Le score expliquera ses références dès que des sessions auront des conditions enregistrées.
+        </p>
+        <div class="table-wrap" th:if="${!#lists.isEmpty(scoreContributors)}">
+          <table class="similar-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Fenêtre</th>
+                <th>Note</th>
+                <th>Similarité</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="contributor : ${scoreContributors}">
+                <td th:text="${contributor.date}">04/06/2026</td>
+                <td th:text="${contributor.timeWindow}">09:00 - 11:00</td>
+                <td><span class="rating-pill" th:text="${contributor.rating} + '/10'">8/10</span></td>
+                <td>
+                  <span class="similarity-bar" th:style="'--similarity-percent: ' + ${contributor.similarityPercent} + '%'">
+                    <i></i><em th:text="${contributor.similarity}">80 %</em>
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="panel entry-panel" aria-labelledby="entry-title">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title" id="entry-title">Ajouter une session</h2>
+            <p class="panel-kicker">Saisie rapide</p>
+          </div>
+        </div>
         <form class="session-form" th:action="@{/sessions}" th:object="${form}" method="post">
           <label>
             <span>Date</span>
-            <input type="date" th:field="*{date}">
+            <input type="date" id="date" name="date" th:value="*{date}">
             <strong th:if="${#fields.hasErrors('date')}" th:errors="*{date}">Erreur de date</strong>
           </label>
 
           <div class="field-grid">
             <label>
-              <span>Début</span>
-              <input type="time" th:field="*{startTime}">
+              <span>Heure de début</span>
+              <input type="time" id="startTime" name="startTime" th:value="*{startTime}">
               <strong th:if="${#fields.hasErrors('startTime')}" th:errors="*{startTime}">Erreur de début</strong>
             </label>
             <label>
-              <span>Fin</span>
-              <input type="time" th:field="*{endTime}">
+              <span>Heure de fin</span>
+              <input type="time" id="endTime" name="endTime" th:value="*{endTime}">
               <strong th:if="${#fields.hasErrors('endTime')}" th:errors="*{endTime}">Erreur de fin</strong>
             </label>
           </div>
 
           <label>
-            <span>Note</span>
-            <input type="number" min="0" max="10" step="1" th:field="*{rating}" placeholder="0-10">
+            <span>Note sur 10</span>
+            <input type="number" id="rating" name="rating" min="0" max="10" step="1" th:value="*{rating}" placeholder="0-10">
             <strong th:if="${#fields.hasErrors('rating')}" th:errors="*{rating}">Erreur de note</strong>
           </label>
 
           <label>
             <span>Notes</span>
-            <textarea rows="5" th:field="*{notes}" placeholder="Vent ressenti, fréquentation, marée, bancs de sable..."></textarea>
+            <textarea rows="4" th:field="*{notes}" placeholder="Vent ressenti, fréquentation, marée, bancs de sable..."></textarea>
           </label>
 
           <button type="submit">Enregistrer la session</button>
         </form>
-      </section>
+      </article>
+    </section>
 
-      <section class="panel history-panel" aria-labelledby="history-title">
-        <div class="panel-heading">
-          <h2 id="history-title">Historique des sessions</h2>
-          <span th:text="${#lists.size(sessions)} + ' enregistrée(s)'">0 enregistrée</span>
+    <section class="panel history-panel" aria-labelledby="history-title">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title" id="history-title">Historique récent</h2>
+          <p class="panel-kicker">Historique des sessions</p>
         </div>
-
-        <div class="empty-state" th:if="${#lists.isEmpty(sessions)}">
-          <p>Aucune session enregistrée pour le moment.</p>
-        </div>
-
-        <ol class="session-list" th:if="${!#lists.isEmpty(sessions)}">
-          <li th:each="surfSession : ${sessions}">
-            <div class="session-score">
-              <strong th:text="${surfSession.rating}">8</strong>
-              <span>/10</span>
-            </div>
-            <div class="session-content">
-              <p>
-                <time th:text="${surfSession.date}">04/06/2026</time>
-                <span th:text="${surfSession.timeWindow}">09:00 - 11:00</span>
-              </p>
-              <dl class="session-tide" th:classappend="${!surfSession.tide.available} ? 'session-tide--warning'">
-                <div>
-                  <dt>Marée</dt>
-                  <dd th:text="${surfSession.tide.available} ? ${surfSession.tide.waterHeight} + ' · ' + ${surfSession.tide.phase} : ${surfSession.tide.status}">
-                    3,20 m · Montante
-                  </dd>
-                </div>
-                <div th:if="${surfSession.tide.available}">
-                  <dt>Pleine mer</dt>
-                  <dd th:text="${surfSession.tide.previousHighTide} + ' -> ' + ${surfSession.tide.nextHighTide}">00:45 -> 13:30</dd>
-                </div>
-                <div th:if="${surfSession.tide.available}">
-                  <dt>Basse mer</dt>
-                  <dd th:text="${surfSession.tide.previousLowTide} + ' -> ' + ${surfSession.tide.nextLowTide}">07:00 -> 19:28</dd>
-                </div>
-              </dl>
-              <div class="session-conditions" th:classappend="${!surfSession.conditions.captured} ? 'session-conditions--empty'">
-                <span th:if="${surfSession.conditions.providerName != null}" th:text="${surfSession.conditions.providerName}">Open-Meteo</span>
-                <p th:text="${surfSession.conditions.summary}">
-                  Vent 18,0 km/h, rafales 25,0 km/h, dir. 260° · Vagues 1,1 m, période 8,0 s, dir. 245°
-                </p>
-              </div>
-              <small th:if="${surfSession.notes}" th:text="${surfSession.notes}">Notes</small>
-            </div>
-          </li>
-        </ol>
-      </section>
-    </div>
-
-    <section class="panel contributors-panel" aria-labelledby="contributors-title">
-      <div class="panel-heading">
-        <h2 id="contributors-title">Sessions qui influencent le score</h2>
-        <span th:text="${#lists.size(scoreContributors)} + ' contribution(s)'">0 contribution</span>
+        <span class="panel-chip" th:text="${#lists.size(sessions)} + ' enregistrée(s)'">0 enregistrée</span>
       </div>
-      <p class="empty-copy" th:if="${#lists.isEmpty(scoreContributors)}">
-        Le score expliquera ses références dès que des sessions auront des conditions enregistrées.
-      </p>
-      <ol class="contributor-list" th:if="${!#lists.isEmpty(scoreContributors)}">
-        <li th:each="contributor : ${scoreContributors}">
-          <strong th:text="${contributor.rating} + '/10'">8/10</strong>
-          <span th:text="${contributor.date} + ' · ' + ${contributor.timeWindow}">04/06/2026 · 09:00 - 11:00</span>
-          <em th:text="'Similarité ' + ${contributor.similarity}">Similarité 80 %</em>
+
+      <div class="empty-state" th:if="${#lists.isEmpty(sessions)}">
+        <p>Aucune session enregistrée pour le moment.</p>
+      </div>
+
+      <ol class="session-list" th:if="${!#lists.isEmpty(sessions)}">
+        <li th:each="surfSession : ${sessions}">
+          <div class="session-score" th:classappend="${surfSession.rating >= 8} ? 'session-score--good'">
+            <strong th:text="${surfSession.rating}">8</strong>
+            <span>/10</span>
+          </div>
+          <div class="session-content">
+            <p class="session-title">
+              <time th:text="${surfSession.date}">04/06/2026</time>
+              <span th:text="${surfSession.timeWindow}">09:00 - 11:00</span>
+            </p>
+            <dl class="session-tide" th:classappend="${!surfSession.tide.available} ? 'session-tide--warning'">
+              <div>
+                <dt>Marée</dt>
+                <dd th:text="${surfSession.tide.available} ? ${surfSession.tide.waterHeight} + ' · ' + ${surfSession.tide.phase} : ${surfSession.tide.status}">
+                  3,25 m · Montante
+                </dd>
+              </div>
+              <div th:if="${surfSession.tide.available}">
+                <dt>Pleine mer</dt>
+                <dd th:text="${surfSession.tide.previousHighTide} + ' -> ' + ${surfSession.tide.nextHighTide}">n/d -> 12:40</dd>
+              </div>
+              <div th:if="${surfSession.tide.available}">
+                <dt>Basse mer</dt>
+                <dd th:text="${surfSession.tide.previousLowTide} + ' -> ' + ${surfSession.tide.nextLowTide}">07:20 -> 18:55</dd>
+              </div>
+            </dl>
+            <div class="session-conditions" th:classappend="${!surfSession.conditions.captured} ? 'session-conditions--empty'">
+              <span th:if="${surfSession.conditions.providerName != null}" th:text="${surfSession.conditions.providerName}">Open-Meteo</span>
+              <p th:text="${surfSession.conditions.summary}">
+                Vent 18,0 km/h, rafales 25,0 km/h, dir. 260° · Vagues 1,1 m, période 8,0 s, dir. 245°
+              </p>
+            </div>
+            <small th:if="${surfSession.notes}" th:text="${surfSession.notes}">Notes</small>
+          </div>
         </li>
       </ol>
     </section>
+
+    <footer class="footer">
+      <span th:text="'TikaSwell · Outil interne · Spot configuré : ' + ${spot.name}">TikaSwell · Outil interne</span>
+      <span>Données Open-Meteo · Score empirique explicable</span>
+    </footer>
   </main>
 </body>
 </html>
