@@ -37,6 +37,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.Instant
@@ -299,6 +300,32 @@ class HomeControllerTests {
 		mockMvc.perform(post("/conditions/refresh").param("uiVersion", "v3"))
 			.andExpect(status().is3xxRedirection)
 			.andExpect(redirectedUrl("/v3?refreshed=1"))
+	}
+
+	@Test
+	fun `sessions can be exported as csv`() {
+		mockMvc.perform(
+			post("/sessions")
+				.param("date", "2026-06-04")
+				.param("startTime", "09:00")
+				.param("endTime", "11:00")
+				.param("rating", "8")
+				.param("notes", "Clean morning lines"),
+		)
+			.andExpect(status().is3xxRedirection)
+
+		mockMvc.perform(get("/exports/sessions.csv"))
+			.andExpect(status().isOk)
+			.andExpect(header().string("Content-Disposition", "attachment; filename=\"tikaswell-sessions.csv\""))
+			.andExpect(content().string(containsString("\"id\",\"spot_id\",\"spot_name\",\"date\",\"starts_at\",\"ends_at\",\"rating\",\"notes\",\"conditions_provider\",\"conditions_summary\"")))
+			.andExpect(content().string(containsString("\"initial\"")))
+			.andExpect(content().string(containsString("\"Initial spot\"")))
+			.andExpect(content().string(containsString("\"2026-06-04\"")))
+			.andExpect(content().string(containsString("\"09:00\"")))
+			.andExpect(content().string(containsString("\"11:00\"")))
+			.andExpect(content().string(containsString("\"8\"")))
+			.andExpect(content().string(containsString("\"Clean morning lines\"")))
+			.andExpect(content().string(containsString("\"Provider de test\"")))
 	}
 
 	@Test
