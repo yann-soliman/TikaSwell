@@ -254,9 +254,18 @@ private class InMemorySurfSessionRepository : SurfSessionRepository {
 		return saved
 	}
 
+	override fun update(session: SurfSession): SurfSession {
+		sessions[session.id!!] = session
+		return session
+	}
+
 	override fun findById(id: SurfSessionId): SurfSession? =
 		sessions[id]
 
 	override fun findBySpotId(spotId: SpotId): List<SurfSession> =
 		sessions.values.filter { it.spotId == spotId }
+
+	override fun deleteById(id: SurfSessionId) {
+		sessions.remove(id)
+	}
 }

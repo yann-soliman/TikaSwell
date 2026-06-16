@@ -218,6 +218,7 @@
           <span th:text="${surfSession.timeWindow}">07:15-08:30</span>
         </div>
         <p th:text="${surfSession.notes ?: 'Sans note'}">Belle session matinale, peu de monde.</p>
+        <a th:href="@{/sessions/{id}/edit(id=${surfSession.id}, uiVersion=${uiVersion})}">Modifier</a>
         <em th:text="${surfSession.rating} + '/10'">8/10</em>
       </article>
     </section>

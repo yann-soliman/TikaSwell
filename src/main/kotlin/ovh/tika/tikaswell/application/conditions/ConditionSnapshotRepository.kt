@@ -11,4 +11,6 @@ interface ConditionSnapshotRepository {
 	fun findBySessionId(sessionId: SurfSessionId): List<SessionConditionSnapshot>
 
 	fun findBySpotId(spotId: SpotId): List<SessionConditionSnapshot>
+
+	fun deleteBySessionId(sessionId: SurfSessionId)
 }

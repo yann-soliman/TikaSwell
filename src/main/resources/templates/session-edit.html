@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TikaSwell - Modifier une session</title>
+  <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+  <link rel="stylesheet" th:href="@{/styles/app.css}">
+</head>
+<body>
+  <main class="shell">
+    <article class="panel form-panel">
+      <div class="panel-header">
+        <div>
+          <span class="panel-title">Modifier la session</span>
+          <p class="panel-kicker" th:text="${spot.name}">Initial spot</p>
+        </div>
+        <a class="refresh-button" th:href="${uiVersion == 'v2' ? '/v2' : (uiVersion == 'v3' ? '/v3' : '/')}">Retour</a>
+      </div>
+
+      <form class="session-form" th:action="@{/sessions/{id}(id=${sessionId})}" th:object="${form}" method="post">
+        <input type="hidden" name="uiVersion" th:value="${uiVersion}">
+        <div class="form-grid">
+          <label>
+            <span>Date</span>
+            <input type="date" id="edit-date" name="date" th:value="*{date}" required>
+            <strong th:if="${#fields.hasErrors('date')}" th:errors="*{date}">Erreur de date</strong>
+          </label>
+          <label>
+            <span>Note</span>
+            <input type="number" id="edit-rating" name="rating" min="0" max="10" step="1" th:value="*{rating}" required>
+            <strong th:if="${#fields.hasErrors('rating')}" th:errors="*{rating}">Erreur de note</strong>
+          </label>
+          <label>
+            <span>Début</span>
+            <input type="time" id="edit-startTime" name="startTime" th:value="*{startTime}" required>
+            <strong th:if="${#fields.hasErrors('startTime')}" th:errors="*{startTime}">Erreur de début</strong>
+          </label>
+          <label>
+            <span>Fin</span>
+            <input type="time" id="edit-endTime" name="endTime" th:value="*{endTime}" required>
+            <strong th:if="${#fields.hasErrors('endTime')}" th:errors="*{endTime}">Erreur de fin</strong>
+          </label>
+        </div>
+        <label>
+          <span>Notes</span>
+          <textarea rows="4" th:field="*{notes}" placeholder="Notes de session"></textarea>
+        </label>
+        <button class="primary-button" type="submit">Enregistrer les modifications</button>
+      </form>
+
+      <form class="session-form" th:action="@{/sessions/{id}/delete(id=${sessionId})}" method="post">
+        <input type="hidden" name="uiVersion" th:value="${uiVersion}">
+        <button class="refresh-button" type="submit">Supprimer la session</button>
+      </form>
+    </article>
+  </main>
+</body>
+</html>

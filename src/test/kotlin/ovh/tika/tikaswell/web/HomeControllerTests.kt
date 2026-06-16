@@ -329,6 +329,55 @@ class HomeControllerTests {
 	}
 
 	@Test
+	fun `session can be edited and deleted`() {
+		mockMvc.perform(
+			post("/sessions")
+				.param("date", "2026-06-04")
+				.param("startTime", "09:00")
+				.param("endTime", "11:00")
+				.param("rating", "8")
+				.param("notes", "Before edit"),
+		)
+			.andExpect(status().is3xxRedirection)
+
+		val session = surfSessionRepository.findBySpotId(SpotId("initial")).single()
+		val sessionId = session.id!!.value
+
+		mockMvc.perform(get("/sessions/$sessionId/edit").param("uiVersion", "v3"))
+			.andExpect(status().isOk)
+			.andExpect(content().string(containsString("Modifier la session")))
+			.andExpect(content().string(containsString("Before edit")))
+			.andExpect(content().string(containsString("value=\"v3\"")))
+
+		mockMvc.perform(
+			post("/sessions/$sessionId")
+				.param("uiVersion", "v3")
+				.param("date", "2026-06-05")
+				.param("startTime", "07:30")
+				.param("endTime", "09:00")
+				.param("rating", "9")
+				.param("notes", "After edit"),
+		)
+			.andExpect(status().is3xxRedirection)
+			.andExpect(redirectedUrl("/v3?saved=1"))
+
+		mockMvc.perform(get("/v3"))
+			.andExpect(status().isOk)
+			.andExpect(content().string(containsString("After edit")))
+			.andExpect(content().string(containsString("9/10")))
+			.andExpect(content().string(not(containsString("Before edit"))))
+
+		mockMvc.perform(post("/sessions/$sessionId/delete").param("uiVersion", "v3"))
+			.andExpect(status().is3xxRedirection)
+			.andExpect(redirectedUrl("/v3?deleted=1"))
+
+		mockMvc.perform(get("/v3").param("deleted", "1"))
+			.andExpect(status().isOk)
+			.andExpect(content().string(containsString("Session supprimée")))
+			.andExpect(content().string(not(containsString("After edit"))))
+	}
+
+	@Test
 	fun `session history renders a clear state when conditions were not captured`() {
 		surfSessionRepository.save(
 			SurfSession(

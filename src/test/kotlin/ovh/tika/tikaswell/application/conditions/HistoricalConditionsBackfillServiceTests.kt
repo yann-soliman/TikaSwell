@@ -143,11 +143,20 @@ private class InMemorySurfSessionRepository : SurfSessionRepository {
 		return saved
 	}
 
+	override fun update(session: SurfSession): SurfSession {
+		sessions[session.id!!] = session
+		return session
+	}
+
 	override fun findById(id: SurfSessionId): SurfSession? =
 		sessions[id]
 
 	override fun findBySpotId(spotId: SpotId): List<SurfSession> =
 		sessions.values.filter { it.spotId == spotId }
+
+	override fun deleteById(id: SurfSessionId) {
+		sessions.remove(id)
+	}
 }
 
 private class InMemoryConditionSnapshotRepository : ConditionSnapshotRepository {
@@ -169,4 +178,8 @@ private class InMemoryConditionSnapshotRepository : ConditionSnapshotRepository 
 
 	override fun findBySpotId(spotId: SpotId): List<SessionConditionSnapshot> =
 		snapshots.filter { it.snapshot.spotId == spotId }
+
+	override fun deleteBySessionId(sessionId: SurfSessionId) {
+		snapshots.removeIf { it.sessionId == sessionId }
+	}
 }

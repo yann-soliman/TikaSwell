@@ -36,6 +36,27 @@ class SurfSessionService(
 	fun findById(id: ovh.tika.tikaswell.domain.SurfSessionId): SurfSession? =
 		repository.findById(id)
 
+	fun update(command: UpdateSurfSessionCommand): SurfSession {
+		val existing = repository.findById(command.id) ?: error("Session ${command.id.value} introuvable")
+		require(existing.spotId == command.spot.id) { "La session n'appartient pas au spot configuré" }
+		val updated = repository.update(
+			existing.copy(
+				startsAt = command.startsAt,
+				endsAt = command.endsAt,
+				rating = command.rating,
+				notes = command.notes?.trim()?.takeIf { it.isNotBlank() },
+			),
+		)
+		conditionSnapshotRepository.deleteBySessionId(command.id)
+		captureConditions(command.spot, updated)
+		return updated
+	}
+
+	fun delete(id: ovh.tika.tikaswell.domain.SurfSessionId) {
+		conditionSnapshotRepository.deleteBySessionId(id)
+		repository.deleteById(id)
+	}
+
 	private fun captureConditions(spot: Spot, session: SurfSession) {
 		try {
 			conditionsProvider.fetchHistoricalConditions(

@@ -328,6 +328,7 @@
               <th>Note</th>
               <th>Visuel</th>
               <th>Notes</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -341,6 +342,7 @@
                 </div>
               </td>
               <td th:text="${surfSession.notes ?: '—'}">Belle session matinale.</td>
+              <td><a class="chip" th:href="@{/sessions/{id}/edit(id=${surfSession.id}, uiVersion=${uiVersion})}">Modifier</a></td>
             </tr>
           </tbody>
         </table>

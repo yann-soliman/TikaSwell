@@ -382,6 +382,9 @@
             <span class="eyebrow">Notes</span>
             <p th:text="${surfSession.notes ?: '—'}">Clean au montant</p>
           </div>
+          <div>
+            <a class="refresh-button" th:href="@{/sessions/{id}/edit(id=${surfSession.id}, uiVersion=${uiVersion})}">Modifier</a>
+          </div>
           <div class="sr-only">
             <dl class="session-tide" th:classappend="${!surfSession.tide.available} ? 'session-tide--warning'">
               <div>

@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull
 import ovh.tika.tikaswell.application.conditions.ConditionSnapshotRepository
 import ovh.tika.tikaswell.application.session.CreateSurfSessionCommand
 import ovh.tika.tikaswell.application.session.SurfSessionService
+import ovh.tika.tikaswell.application.session.UpdateSurfSessionCommand
 import ovh.tika.tikaswell.application.spot.SpotProvider
 import ovh.tika.tikaswell.application.scoring.SurfScoreService
 import ovh.tika.tikaswell.application.tide.TideSnapshotLookup
@@ -21,6 +22,7 @@ import ovh.tika.tikaswell.domain.ScoreFactor
 import ovh.tika.tikaswell.domain.SessionConditionSnapshot
 import ovh.tika.tikaswell.domain.Spot
 import ovh.tika.tikaswell.domain.SurfSession
+import ovh.tika.tikaswell.domain.SurfSessionId
 import ovh.tika.tikaswell.domain.TideDayCache
 import ovh.tika.tikaswell.domain.TideEvent
 import ovh.tika.tikaswell.domain.TidePhase
@@ -31,6 +33,7 @@ import org.springframework.ui.Model
 import org.springframework.validation.BindingResult
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.ModelAttribute
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestParam
 import java.time.Duration
@@ -60,12 +63,13 @@ class HomeController(
 	@GetMapping("/")
 	fun home(
 		@RequestParam(name = "saved", required = false) saved: String?,
+		@RequestParam(name = "deleted", required = false) deleted: String?,
 		@RequestParam(name = "refreshed", required = false) refreshed: String?,
 		@RequestParam(name = "refreshError", required = false) refreshError: String?,
 		@RequestParam(name = "ui", required = false, defaultValue = "v1") uiVersion: String,
 		model: Model,
 	): String {
-		addStatusMessage(model, saved, refreshed, refreshError)
+		addStatusMessage(model, saved, deleted, refreshed, refreshError)
 		populateHomeModel(model, SurfSessionForm.default(), uiVersion.normalizedUiVersion())
 		return uiVersion.normalizedTemplate()
 	}
@@ -73,11 +77,12 @@ class HomeController(
 	@GetMapping("/v2")
 	fun homeV2(
 		@RequestParam(name = "saved", required = false) saved: String?,
+		@RequestParam(name = "deleted", required = false) deleted: String?,
 		@RequestParam(name = "refreshed", required = false) refreshed: String?,
 		@RequestParam(name = "refreshError", required = false) refreshError: String?,
 		model: Model,
 	): String {
-		addStatusMessage(model, saved, refreshed, refreshError)
+		addStatusMessage(model, saved, deleted, refreshed, refreshError)
 		populateHomeModel(model, SurfSessionForm.default(), "v2")
 		return "home-v2"
 	}
@@ -85,11 +90,12 @@ class HomeController(
 	@GetMapping("/v3")
 	fun homeV3(
 		@RequestParam(name = "saved", required = false) saved: String?,
+		@RequestParam(name = "deleted", required = false) deleted: String?,
 		@RequestParam(name = "refreshed", required = false) refreshed: String?,
 		@RequestParam(name = "refreshError", required = false) refreshError: String?,
 		model: Model,
 	): String {
-		addStatusMessage(model, saved, refreshed, refreshError)
+		addStatusMessage(model, saved, deleted, refreshed, refreshError)
 		populateHomeModel(model, SurfSessionForm.default(), "v3")
 		return "home-v3"
 	}
@@ -147,6 +153,61 @@ class HomeController(
 		}
 	}
 
+	@GetMapping("/sessions/{id}/edit")
+	fun editSession(
+		@PathVariable id: Long,
+		@RequestParam(name = "uiVersion", required = false, defaultValue = "v1") uiVersion: String,
+		model: Model,
+	): String {
+		val session = surfSessionService.findById(SurfSessionId(id)) ?: return "redirect:/"
+		populateEditModel(model, session, uiVersion.normalizedUiVersion())
+		return "session-edit"
+	}
+
+	@PostMapping("/sessions/{id}")
+	fun updateSession(
+		@PathVariable id: Long,
+		@Valid @ModelAttribute("form") form: SurfSessionForm,
+		bindingResult: BindingResult,
+		@RequestParam(name = "uiVersion", required = false, defaultValue = "v1") uiVersion: String,
+		model: Model,
+	): String {
+		val normalizedUiVersion = uiVersion.normalizedUiVersion()
+		val sessionId = SurfSessionId(id)
+		val existing = surfSessionService.findById(sessionId) ?: return "redirect:${normalizedUiVersion.homePath()}"
+		if (form.startTime != null && form.endTime != null && !form.startTime.isBefore(form.endTime)) {
+			bindingResult.rejectValue("endTime", "session.endTime.afterStart", "L'heure de fin doit être après l'heure de début")
+		}
+		if (bindingResult.hasErrors()) {
+			populateEditModel(model, existing, normalizedUiVersion)
+			model.addAttribute("form", form)
+			return "session-edit"
+		}
+
+		val spot = spotProvider.initialSpot()
+		surfSessionService.update(
+			UpdateSurfSessionCommand(
+				id = sessionId,
+				spot = spot,
+				startsAt = form.date!!.atTime(form.startTime).atZone(zoneId).toInstant(),
+				endsAt = form.date.atTime(form.endTime).atZone(zoneId).toInstant(),
+				rating = Rating(form.rating!!),
+				notes = form.notes,
+			),
+		)
+		return "redirect:${normalizedUiVersion.homePath()}?saved=1"
+	}
+
+	@PostMapping("/sessions/{id}/delete")
+	fun deleteSession(
+		@PathVariable id: Long,
+		@RequestParam(name = "uiVersion", required = false, defaultValue = "v1") uiVersion: String,
+	): String {
+		val normalizedUiVersion = uiVersion.normalizedUiVersion()
+		surfSessionService.delete(SurfSessionId(id))
+		return "redirect:${normalizedUiVersion.homePath()}?deleted=1"
+	}
+
 	private fun populateHomeModel(model: Model, form: SurfSessionForm, uiVersion: String) {
 		val spot = spotProvider.initialSpot()
 		val sessions = surfSessionService.listForInitialSpot(spot.id)
@@ -183,12 +244,22 @@ class HomeController(
 		model.addAttribute("uiVersion", uiVersion)
 	}
 
-	private fun addStatusMessage(model: Model, saved: String?, refreshed: String?, refreshError: String?) {
+	private fun addStatusMessage(model: Model, saved: String?, deleted: String?, refreshed: String?, refreshError: String?) {
 		when {
 			saved == "1" -> model.addAttribute("message", "Session enregistrée")
+			deleted == "1" -> model.addAttribute("message", "Session supprimée")
 			refreshed == "1" -> model.addAttribute("message", "Conditions rafraîchies")
 			refreshError == "1" -> model.addAttribute("message", "Rafraîchissement impossible")
 		}
+	}
+
+	private fun populateEditModel(model: Model, session: SurfSession, uiVersion: String) {
+		if (!model.containsAttribute("form")) {
+			model.addAttribute("form", SurfSessionForm.from(session, zoneId))
+		}
+		model.addAttribute("spot", spotProvider.initialSpot())
+		model.addAttribute("sessionId", session.id!!.value)
+		model.addAttribute("uiVersion", uiVersion)
 	}
 
 	private fun tideContext(spot: Spot, instant: Instant): TideContextView {
@@ -278,6 +349,13 @@ class HomeController(
 			"v3" -> "home-v3"
 			else -> "home"
 		}
+
+	private fun String.homePath(): String =
+		when (this) {
+			"v2" -> "/v2"
+			"v3" -> "/v3"
+			else -> "/"
+		}
 }
 
 data class SurfSessionForm(
@@ -301,6 +379,18 @@ data class SurfSessionForm(
 			rating = null,
 			notes = null,
 		)
+
+		fun from(session: SurfSession, zoneId: ZoneId): SurfSessionForm {
+			val startsAt = session.startsAt.atZone(zoneId)
+			val endsAt = session.endsAt.atZone(zoneId)
+			return SurfSessionForm(
+				date = startsAt.toLocalDate(),
+				startTime = startsAt.toLocalTime(),
+				endTime = endsAt.toLocalTime(),
+				rating = session.rating.value,
+				notes = session.notes,
+			)
+		}
 	}
 }
 

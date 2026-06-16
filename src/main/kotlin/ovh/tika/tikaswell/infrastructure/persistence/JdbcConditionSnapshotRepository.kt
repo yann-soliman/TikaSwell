@@ -128,6 +128,13 @@ class JdbcConditionSnapshotRepository(
 			mapOf("spotId" to spotId.value),
 		)
 
+	override fun deleteBySessionId(sessionId: SurfSessionId) {
+		jdbcTemplate.update(
+			"DELETE FROM condition_snapshots WHERE surf_session_id = :sessionId",
+			mapOf("sessionId" to sessionId.value),
+		)
+	}
+
 	private fun querySnapshots(sql: String, params: Map<String, Any>): List<SessionConditionSnapshot> =
 		jdbcTemplate.query(sql, params, rowMapper)
 

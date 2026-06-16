@@ -38,6 +38,29 @@ class JdbcSurfSessionRepository(
 		return session.copy(id = SurfSessionId(keyHolder.key!!.toLong()))
 	}
 
+	override fun update(session: SurfSession): SurfSession {
+		val id = requireNotNull(session.id) { "L'id de session est obligatoire pour une modification" }
+		jdbcTemplate.update(
+			"""
+			UPDATE surf_sessions
+			SET spot_id = :spotId,
+			    starts_at = :startsAt,
+			    ends_at = :endsAt,
+			    rating = :rating,
+			    notes = :notes
+			WHERE id = :id
+			""".trimIndent(),
+			MapSqlParameterSource()
+				.addValue("id", id.value)
+				.addValue("spotId", session.spotId.value)
+				.addValue("startsAt", session.startsAt.toString())
+				.addValue("endsAt", session.endsAt.toString())
+				.addValue("rating", session.rating.value)
+				.addValue("notes", session.notes),
+		)
+		return session
+	}
+
 	override fun findById(id: SurfSessionId): SurfSession? =
 		jdbcTemplate.query(
 			"""
@@ -60,6 +83,13 @@ class JdbcSurfSessionRepository(
 			mapOf("spotId" to spotId.value),
 			rowMapper,
 		)
+
+	override fun deleteById(id: SurfSessionId) {
+		jdbcTemplate.update(
+			"DELETE FROM surf_sessions WHERE id = :id",
+			mapOf("id" to id.value),
+		)
+	}
 
 	private companion object {
 		val rowMapper = RowMapper { rs: ResultSet, _: Int ->
