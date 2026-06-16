@@ -158,11 +158,12 @@ class HomeController(
 		model.addAttribute("currentConditions", currentConditions.getOrNull()?.snapshot?.let(CurrentConditionsView::from))
 		model.addAttribute("conditionsError", currentConditions.exceptionOrNull()?.message)
 		model.addAttribute("currentTide", currentTide)
+		val scoreContributors = scoreContributors(currentScore, sessions)
 		model.addAttribute("currentScore", currentScore?.let(CurrentScoreView::from))
-		model.addAttribute("scoreContributors", scoreContributors(currentScore, sessions))
+		model.addAttribute("scoreContributors", scoreContributors)
 		model.addAttribute("scoreTideNote", scoreTideNote(currentScore, currentTide))
 		model.addAttribute("sessionStats", SessionStatsView.from(sessions))
-		model.addAttribute("v3Verdict", V3VerdictView.from(currentScore?.let(CurrentScoreView::from), currentConditions.isFailure))
+		model.addAttribute("v3Verdict", V3VerdictView.from(currentScore?.let(CurrentScoreView::from), scoreContributors.size, currentConditions.isFailure))
 		model.addAttribute("v3ScoreFactors", v3ScoreFactors(currentScore, currentConditions.getOrNull()?.snapshot, currentTide))
 		model.addAttribute("uiVersion", uiVersion)
 	}
@@ -597,11 +598,11 @@ data class V3VerdictView(
 	val confidence: String,
 	val hasScore: Boolean,
 	val hasProviderError: Boolean,
-	val windowLabel: String,
-	val trendLabel: String,
+	val momentLabel: String,
+	val referenceLabel: String,
 ) {
 	companion object {
-		fun from(score: CurrentScoreView?, hasProviderError: Boolean): V3VerdictView {
+		fun from(score: CurrentScoreView?, contributorCount: Int, hasProviderError: Boolean): V3VerdictView {
 			if (hasProviderError) {
 				return V3VerdictView(
 					title = "Indisponible",
@@ -611,8 +612,8 @@ data class V3VerdictView(
 					confidence = "0 %",
 					hasScore = false,
 					hasProviderError = true,
-					windowLabel = "n/d",
-					trendLabel = "n/d",
+					momentLabel = "n/d",
+					referenceLabel = "n/d",
 				)
 			}
 			if (score == null || !score.hasScore) {
@@ -624,8 +625,8 @@ data class V3VerdictView(
 					confidence = score?.confidence ?: "0 %",
 					hasScore = false,
 					hasProviderError = false,
-					windowLabel = "À confirmer",
-					trendLabel = "Historique insuffisant",
+					momentLabel = "À confirmer",
+					referenceLabel = "0 session",
 				)
 			}
 
@@ -637,8 +638,8 @@ data class V3VerdictView(
 				confidence = score.confidence,
 				hasScore = true,
 				hasProviderError = false,
-				windowLabel = "Maintenant",
-				trendLabel = "Non calculée",
+				momentLabel = "Maintenant",
+				referenceLabel = "$contributorCount session(s)",
 			)
 		}
 	}

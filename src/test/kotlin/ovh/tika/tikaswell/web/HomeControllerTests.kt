@@ -134,6 +134,8 @@ class HomeControllerTests {
 			.andExpect(content().string(not(containsString("GO surfer"))))
 			.andExpect(content().string(not(containsString("21,4 °C"))))
 			.andExpect(content().string(not(containsString("Peu de data"))))
+			.andExpect(content().string(not(containsString("Fenêtre"))))
+			.andExpect(content().string(not(containsString("Tendance"))))
 	}
 
 	@Test
