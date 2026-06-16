@@ -191,6 +191,10 @@ dd {
   margin-left: auto;
 }
 
+.topbar__actions form {
+  display: inline-flex;
+}
+
 .topbar__updated {
   text-align: right;
   white-space: nowrap;
@@ -241,6 +245,8 @@ dd {
   border-radius: var(--radius);
   background: var(--surface);
   padding: 6px 11px;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 .refresh-button span {

@@ -192,6 +192,10 @@ svg {
   gap: 0.45rem;
 }
 
+.mobile-actions form {
+  display: inline-flex;
+}
+
 .mobile-switch {
   display: flex;
   align-items: center;
@@ -230,6 +234,9 @@ svg {
     linear-gradient(180deg, color-mix(in oklab, white 8%, transparent), color-mix(in oklab, white 2%, transparent)),
     color-mix(in oklab, var(--surface) 75%, transparent);
   backdrop-filter: blur(20px);
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 .bell svg {

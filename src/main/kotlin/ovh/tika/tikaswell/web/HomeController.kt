@@ -60,12 +60,12 @@ class HomeController(
 	@GetMapping("/")
 	fun home(
 		@RequestParam(name = "saved", required = false) saved: String?,
+		@RequestParam(name = "refreshed", required = false) refreshed: String?,
+		@RequestParam(name = "refreshError", required = false) refreshError: String?,
 		@RequestParam(name = "ui", required = false, defaultValue = "v1") uiVersion: String,
 		model: Model,
 	): String {
-		if (saved == "1") {
-			model.addAttribute("message", "Session enregistrée")
-		}
+		addStatusMessage(model, saved, refreshed, refreshError)
 		populateHomeModel(model, SurfSessionForm.default(), uiVersion.normalizedUiVersion())
 		return uiVersion.normalizedTemplate()
 	}
@@ -73,11 +73,11 @@ class HomeController(
 	@GetMapping("/v2")
 	fun homeV2(
 		@RequestParam(name = "saved", required = false) saved: String?,
+		@RequestParam(name = "refreshed", required = false) refreshed: String?,
+		@RequestParam(name = "refreshError", required = false) refreshError: String?,
 		model: Model,
 	): String {
-		if (saved == "1") {
-			model.addAttribute("message", "Session enregistrée")
-		}
+		addStatusMessage(model, saved, refreshed, refreshError)
 		populateHomeModel(model, SurfSessionForm.default(), "v2")
 		return "home-v2"
 	}
@@ -85,13 +85,28 @@ class HomeController(
 	@GetMapping("/v3")
 	fun homeV3(
 		@RequestParam(name = "saved", required = false) saved: String?,
+		@RequestParam(name = "refreshed", required = false) refreshed: String?,
+		@RequestParam(name = "refreshError", required = false) refreshError: String?,
 		model: Model,
 	): String {
-		if (saved == "1") {
-			model.addAttribute("message", "Session enregistrée")
-		}
+		addStatusMessage(model, saved, refreshed, refreshError)
 		populateHomeModel(model, SurfSessionForm.default(), "v3")
 		return "home-v3"
+	}
+
+	@PostMapping("/conditions/refresh")
+	fun refreshConditions(
+		@RequestParam(name = "uiVersion", required = false, defaultValue = "v1") uiVersion: String,
+	): String {
+		val normalizedUiVersion = uiVersion.normalizedUiVersion()
+		val spot = spotProvider.initialSpot()
+		val refreshed = runCatching { conditionsProvider.fetchCurrentConditions(spot) }.isSuccess
+		val flag = if (refreshed) "refreshed=1" else "refreshError=1"
+		return when (normalizedUiVersion) {
+			"v2" -> "redirect:/v2?$flag"
+			"v3" -> "redirect:/v3?$flag"
+			else -> "redirect:/?$flag"
+		}
 	}
 
 	@PostMapping("/sessions")
@@ -166,6 +181,14 @@ class HomeController(
 		model.addAttribute("v3Verdict", V3VerdictView.from(currentScore?.let(CurrentScoreView::from), scoreContributors.size, currentConditions.isFailure))
 		model.addAttribute("v3ScoreFactors", v3ScoreFactors(currentScore, currentConditions.getOrNull()?.snapshot, currentTide))
 		model.addAttribute("uiVersion", uiVersion)
+	}
+
+	private fun addStatusMessage(model: Model, saved: String?, refreshed: String?, refreshError: String?) {
+		when {
+			saved == "1" -> model.addAttribute("message", "Session enregistrée")
+			refreshed == "1" -> model.addAttribute("message", "Conditions rafraîchies")
+			refreshError == "1" -> model.addAttribute("message", "Rafraîchissement impossible")
+		}
 	}
 
 	private fun tideContext(spot: Spot, instant: Instant): TideContextView {

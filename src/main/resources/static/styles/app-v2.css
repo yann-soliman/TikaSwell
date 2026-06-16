@@ -277,6 +277,10 @@ h3,
   margin-left: auto;
 }
 
+.v2-topbar__actions form {
+  display: inline-flex;
+}
+
 .live-chip span {
   width: 8px;
   height: 8px;
@@ -316,9 +320,12 @@ h3,
   gap: 8px;
   min-height: 36px;
   padding: 8px 14px;
+  border: 0;
   border-radius: 999px;
   background: var(--aqua);
   color: var(--primary-foreground);
+  cursor: pointer;
+  font-family: inherit;
   font-size: 0.78rem;
   font-weight: 700;
   box-shadow: 0 8px 24px -8px color-mix(in oklab, var(--aqua) 70%, transparent);

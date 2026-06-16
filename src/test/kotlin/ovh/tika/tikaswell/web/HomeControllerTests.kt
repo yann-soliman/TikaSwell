@@ -283,6 +283,25 @@ class HomeControllerTests {
 	}
 
 	@Test
+	fun `manual refresh redirects to selected UI version with status message`() {
+		mockMvc.perform(post("/conditions/refresh").param("uiVersion", "v1"))
+			.andExpect(status().is3xxRedirection)
+			.andExpect(redirectedUrl("/?refreshed=1"))
+
+		mockMvc.perform(get("/").param("refreshed", "1"))
+			.andExpect(status().isOk)
+			.andExpect(content().string(containsString("Conditions rafraîchies")))
+
+		mockMvc.perform(post("/conditions/refresh").param("uiVersion", "v2"))
+			.andExpect(status().is3xxRedirection)
+			.andExpect(redirectedUrl("/v2?refreshed=1"))
+
+		mockMvc.perform(post("/conditions/refresh").param("uiVersion", "v3"))
+			.andExpect(status().is3xxRedirection)
+			.andExpect(redirectedUrl("/v3?refreshed=1"))
+	}
+
+	@Test
 	fun `session history renders a clear state when conditions were not captured`() {
 		surfSessionRepository.save(
 			SurfSession(

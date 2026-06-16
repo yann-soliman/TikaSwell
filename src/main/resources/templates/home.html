@@ -46,10 +46,13 @@
           <a href="/v2">V2</a>
           <a href="/v3">V3</a>
         </nav>
-        <a class="refresh-button" href="/" aria-label="Rafraîchir les données">
-          <span aria-hidden="true"></span>
-          Rafraîchir
-        </a>
+        <form th:action="@{/conditions/refresh}" method="post">
+          <input type="hidden" name="uiVersion" value="v1">
+          <button class="refresh-button" type="submit" aria-label="Rafraîchir les données">
+            <span aria-hidden="true"></span>
+            Rafraîchir
+          </button>
+        </form>
       </div>
     </div>
   </header>
