@@ -17,6 +17,7 @@ import ovh.tika.tikaswell.domain.CurrentScore
 import ovh.tika.tikaswell.domain.Direction
 import ovh.tika.tikaswell.domain.Rating
 import ovh.tika.tikaswell.domain.ScoreContribution
+import ovh.tika.tikaswell.domain.ScoreFactor
 import ovh.tika.tikaswell.domain.SessionConditionSnapshot
 import ovh.tika.tikaswell.domain.Spot
 import ovh.tika.tikaswell.domain.SurfSession
@@ -160,6 +161,9 @@ class HomeController(
 		model.addAttribute("currentScore", currentScore?.let(CurrentScoreView::from))
 		model.addAttribute("scoreContributors", scoreContributors(currentScore, sessions))
 		model.addAttribute("scoreTideNote", scoreTideNote(currentScore, currentTide))
+		model.addAttribute("sessionStats", SessionStatsView.from(sessions))
+		model.addAttribute("v3Verdict", V3VerdictView.from(currentScore?.let(CurrentScoreView::from), currentConditions.isFailure))
+		model.addAttribute("v3ScoreFactors", v3ScoreFactors(currentScore, currentConditions.getOrNull()?.snapshot, currentTide))
 		model.addAttribute("uiVersion", uiVersion)
 	}
 
@@ -192,6 +196,47 @@ class HomeController(
 			currentTide?.available == true -> "La marée est disponible, mais ignorée faute de données historiques comparables."
 			else -> "La marée est ignorée dans la similarité faute de données exploitables."
 		}
+
+	private fun v3ScoreFactors(
+		currentScore: CurrentScore?,
+		currentSnapshot: ConditionSnapshot?,
+		currentTide: TideContextView?,
+	): List<V3ScoreFactorView> {
+		val factorsByKey = currentScore?.factors.orEmpty().associateBy { it.key }
+		return listOf(
+			V3ScoreFactorView.from(
+				title = "Hauteur",
+				value = currentSnapshot?.waveHeightMeters?.let { "${it.format(1)} m" },
+				factor = factorsByKey["waveHeight"],
+				unavailableLabel = "Vagues n/d",
+			),
+			V3ScoreFactorView.from(
+				title = "Période",
+				value = currentSnapshot?.wavePeriodSeconds?.let { "${it.format(1)} s" },
+				factor = factorsByKey["wavePeriod"],
+				unavailableLabel = "Période n/d",
+			),
+			V3ScoreFactorView.from(
+				title = "Direction",
+				value = currentSnapshot?.swellWaveDirection?.let { "${it.degrees}°" }
+					?: currentSnapshot?.waveDirection?.let { "${it.degrees}°" },
+				factor = factorsByKey["waveDirection"],
+				unavailableLabel = "Direction n/d",
+			),
+			V3ScoreFactorView.from(
+				title = "Vent",
+				value = currentSnapshot?.windSpeedKmh?.let { "${it.format(1)} km/h" },
+				factor = factorsByKey["wind"],
+				unavailableLabel = "Vent n/d",
+			),
+			V3ScoreFactorView.from(
+				title = "Marée",
+				value = currentTide?.takeIf { it.available }?.let { "${it.phase} · ${it.waterHeight}" },
+				factor = factorsByKey["tide"],
+				unavailableLabel = currentTide?.status ?: "Marée n/d",
+			),
+		)
+	}
 
 	private fun String.normalizedTemplate(): String =
 		normalizedUiVersion().templateName()
@@ -506,6 +551,136 @@ data class ScoreContributionView(
 				similarityPercent = (contribution.similarity * 100).roundToInt().coerceIn(0, 100),
 				conditions = conditions.summary,
 				notes = session.notes?.takeIf { it.isNotBlank() } ?: "—",
+			)
+		}
+	}
+}
+
+data class SessionStatsView(
+	val count: Int,
+	val averageRating: String,
+	val bestRating: String,
+	val chartBars: List<Int>,
+) {
+	companion object {
+		fun from(sessions: List<SurfSession>): SessionStatsView {
+			if (sessions.isEmpty()) {
+				return SessionStatsView(
+					count = 0,
+					averageRating = "n/d",
+					bestRating = "n/d",
+					chartBars = emptyList(),
+				)
+			}
+
+			val ratings = sessions.map { it.rating.value }
+			val recentBars = sessions
+				.sortedBy { it.startsAt }
+				.takeLast(7)
+				.map { ((it.rating.value / 10.0) * 100).roundToInt().coerceIn(8, 100) }
+
+			return SessionStatsView(
+				count = sessions.size,
+				averageRating = ratings.average().format(1),
+				bestRating = "${ratings.maxOrNull()}/10",
+				chartBars = recentBars,
+			)
+		}
+	}
+}
+
+data class V3VerdictView(
+	val title: String,
+	val summary: String,
+	val score: String,
+	val scorePercent: Int,
+	val confidence: String,
+	val hasScore: Boolean,
+	val hasProviderError: Boolean,
+	val windowLabel: String,
+	val trendLabel: String,
+) {
+	companion object {
+		fun from(score: CurrentScoreView?, hasProviderError: Boolean): V3VerdictView {
+			if (hasProviderError) {
+				return V3VerdictView(
+					title = "Indisponible",
+					summary = "Le fournisseur de données ne répond pas. Les sessions restent consultables.",
+					score = "n/d",
+					scorePercent = 0,
+					confidence = "0 %",
+					hasScore = false,
+					hasProviderError = true,
+					windowLabel = "n/d",
+					trendLabel = "n/d",
+				)
+			}
+			if (score == null || !score.hasScore) {
+				return V3VerdictView(
+					title = "Incertain",
+					summary = "Pas encore assez de sessions historiques similaires pour estimer le spot.",
+					score = "n/d",
+					scorePercent = 0,
+					confidence = score?.confidence ?: "0 %",
+					hasScore = false,
+					hasProviderError = false,
+					windowLabel = "À confirmer",
+					trendLabel = "Historique insuffisant",
+				)
+			}
+
+			return V3VerdictView(
+				title = score.interpretation,
+				summary = score.summary,
+				score = score.score,
+				scorePercent = score.scorePercent,
+				confidence = score.confidence,
+				hasScore = true,
+				hasProviderError = false,
+				windowLabel = "Maintenant",
+				trendLabel = "Non calculée",
+			)
+		}
+	}
+}
+
+data class V3ScoreFactorView(
+	val title: String,
+	val value: String,
+	val label: String,
+	val level: Int,
+	val toneClass: String,
+) {
+	companion object {
+		fun from(title: String, value: String?, factor: ScoreFactor?, unavailableLabel: String): V3ScoreFactorView {
+			if (factor == null || !factor.used) {
+				return V3ScoreFactorView(
+					title = title,
+					value = value ?: unavailableLabel,
+					label = "Non comparé",
+					level = 0,
+					toneClass = "factor--neutral",
+				)
+			}
+
+			val level = (factor.similarity * 100).roundToInt().coerceIn(0, 100)
+			val label = when {
+				level >= 85 -> "Très proche"
+				level >= 70 -> "Proche"
+				level >= 50 -> "Écart modéré"
+				else -> "Écart fort"
+			}
+			val toneClass = when {
+				level >= 70 -> ""
+				level >= 50 -> "factor--warn"
+				else -> "factor--neutral"
+			}
+			return V3ScoreFactorView(
+				title = title,
+				value = value ?: unavailableLabel,
+				label = label,
+				level = level,
+				toneClass = toneClass,
 			)
 		}
 	}

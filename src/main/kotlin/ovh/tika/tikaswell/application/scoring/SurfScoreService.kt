@@ -8,6 +8,7 @@ import ovh.tika.tikaswell.domain.CurrentConditions
 import ovh.tika.tikaswell.domain.CurrentScore
 import ovh.tika.tikaswell.domain.Direction
 import ovh.tika.tikaswell.domain.ScoreContribution
+import ovh.tika.tikaswell.domain.ScoreFactor
 import ovh.tika.tikaswell.domain.SessionConditionSnapshot
 import ovh.tika.tikaswell.domain.SurfSessionId
 import ovh.tika.tikaswell.domain.TidePhase
@@ -37,8 +38,8 @@ class SurfScoreService(
 		val contributors = conditionSnapshotRepository.findBySpotId(currentConditions.spot.id)
 			.groupBy { it.sessionId }
 			.mapNotNull { (sessionId, snapshots) -> contributionFor(sessionId, snapshots, currentConditions, currentVector) }
-			.filter { it.similarity > 0.0 }
-			.sortedByDescending { it.similarity }
+			.filter { it.contribution.similarity > 0.0 }
+			.sortedByDescending { it.contribution.similarity }
 			.take(MAX_CONTRIBUTORS)
 
 		if (contributors.isEmpty()) {
@@ -48,19 +49,34 @@ class SurfScoreService(
 				contributors = emptyList(),
 				computedAt = clock.instant(),
 				tideUsed = false,
+				factors = emptyList(),
 			)
 		}
 
-		val similaritySum = contributors.sumOf { it.similarity }
-		val weightedScore = contributors.sumOf { it.rating.value * it.similarity } / similaritySum
-		val confidence = (contributors.size.toDouble() / MAX_CONTRIBUTORS) * contributors.map { it.similarity }.average()
+		val similaritySum = contributors.sumOf { it.contribution.similarity }
+		val weightedScore = contributors.sumOf { it.contribution.rating.value * it.contribution.similarity } / similaritySum
+		val confidence = (contributors.size.toDouble() / MAX_CONTRIBUTORS) * contributors.map { it.contribution.similarity }.average()
+		val factors = contributors
+			.flatMap { it.factors }
+			.groupBy { it.key }
+			.map { (key, factorContributions) ->
+				val weight = factorContributions.sumOf { it.weight }
+				ScoreFactor(
+					key = key,
+					similarity = if (weight == 0.0) 0.0 else factorContributions.sumOf { it.similarity * it.weight } / weight,
+					weight = weight,
+					used = factorContributions.any { it.used },
+				)
+			}
+			.sortedByDescending { it.weight }
 
 		return CurrentScore(
 			score = weightedScore.roundToSingleDecimal(),
 			confidence = confidence.coerceIn(0.0, 1.0).roundToSingleDecimal(),
-			contributors = contributors,
+			contributors = contributors.map { it.contribution },
 			computedAt = clock.instant(),
-			tideUsed = contributors.any { it.tideUsed },
+			tideUsed = contributors.any { it.contribution.tideUsed },
+			factors = factors,
 		)
 	}
 
@@ -69,7 +85,7 @@ class SurfScoreService(
 		snapshots: List<SessionConditionSnapshot>,
 		currentConditions: CurrentConditions,
 		currentVector: ConditionVector,
-	): ScoreContribution? {
+	): ContributionWithFactors? {
 		val session = surfSessionRepository.findById(sessionId) ?: return null
 		val historicalSnapshots = snapshots.map { it.snapshot }.sortedBy { it.timestamp }
 		val historicalTimestamp = historicalSnapshots[historicalSnapshots.size / 2].timestamp
@@ -77,11 +93,21 @@ class SurfScoreService(
 		val historicalVector = ConditionVector.from(historicalSnapshots, historicalTide)
 		val similarity = currentVector.similarityTo(historicalVector)
 
-		return ScoreContribution(
-			sessionId = session.id!!,
-			rating = session.rating,
-			similarity = similarity.value.roundToSingleDecimal(),
-			tideUsed = similarity.tideUsed,
+		return ContributionWithFactors(
+			contribution = ScoreContribution(
+				sessionId = session.id!!,
+				rating = session.rating,
+				similarity = similarity.value.roundToSingleDecimal(),
+				tideUsed = similarity.tideUsed,
+			),
+			factors = similarity.differences.map {
+				ScoreFactor(
+					key = it.key,
+					similarity = (1.0 - it.distance).coerceIn(0.0, 1.0),
+					weight = it.weight,
+					used = true,
+				)
+			},
 		)
 	}
 
@@ -89,6 +115,11 @@ class SurfScoreService(
 		const val MAX_CONTRIBUTORS = 5
 	}
 }
+
+private data class ContributionWithFactors(
+	val contribution: ScoreContribution,
+	val factors: List<ScoreFactor>,
+)
 
 private data class ConditionVector(
 	val timestamp: Instant,
@@ -103,29 +134,31 @@ private data class ConditionVector(
 	fun similarityTo(other: ConditionVector): SimilarityResult {
 		val differences = buildList {
 			// Poids volontairement simples et lisibles : les vagues comptent plus que la rafale isolée.
-			weightedDifference(windSpeedKmh, other.windSpeedKmh, scale = 40.0, weight = 1.4)?.let(::add)
-			weightedDifference(windGustKmh, other.windGustKmh, scale = 60.0, weight = 0.6)?.let(::add)
-			directionDifference(windDirection, other.windDirection, weight = 1.2)?.let(::add)
-			weightedDifference(waveHeightMeters, other.waveHeightMeters, scale = 4.0, weight = 2.0)?.let(::add)
-			weightedDifference(wavePeriodSeconds, other.wavePeriodSeconds, scale = 20.0, weight = 1.5)?.let(::add)
-			directionDifference(waveDirection, other.waveDirection, weight = 1.0)?.let(::add)
+			weightedDifference("wind", windSpeedKmh, other.windSpeedKmh, scale = 40.0, weight = 1.4)?.let(::add)
+			weightedDifference("wind", windGustKmh, other.windGustKmh, scale = 60.0, weight = 0.6)?.let(::add)
+			directionDifference("wind", windDirection, other.windDirection, weight = 1.2)?.let(::add)
+			weightedDifference("waveHeight", waveHeightMeters, other.waveHeightMeters, scale = 4.0, weight = 2.0)?.let(::add)
+			weightedDifference("wavePeriod", wavePeriodSeconds, other.wavePeriodSeconds, scale = 20.0, weight = 1.5)?.let(::add)
+			directionDifference("waveDirection", waveDirection, other.waveDirection, weight = 1.0)?.let(::add)
 			tide?.differencesTo(other.tide)?.let(::addAll)
 		}
 
 		if (differences.isEmpty()) {
-			return SimilarityResult(value = 0.0, tideUsed = false)
+			return SimilarityResult(value = 0.0, tideUsed = false, differences = emptyList())
 		}
 
 		val weightedDistance = differences.sumOf { it.distance * it.weight } / differences.sumOf { it.weight }
 		return SimilarityResult(
 			value = (1.0 - weightedDistance).coerceIn(0.0, 1.0),
 			tideUsed = differences.any { it.source == DifferenceSource.TIDE },
+			differences = differences,
 		)
 	}
 
 	data class SimilarityResult(
 		val value: Double,
 		val tideUsed: Boolean,
+		val differences: List<WeightedDifference>,
 	)
 
 	companion object {
@@ -144,24 +177,26 @@ private data class ConditionVector(
 			)
 		}
 
-		private fun weightedDifference(left: Double?, right: Double?, scale: Double, weight: Double): WeightedDifference? {
+		private fun weightedDifference(key: String, left: Double?, right: Double?, scale: Double, weight: Double): WeightedDifference? {
 			if (left == null || right == null) {
 				return null
 			}
 			return WeightedDifference(
+				key = key,
 				distance = min(1.0, abs(left - right) / scale),
 				weight = weight,
 				source = DifferenceSource.WEATHER,
 			)
 		}
 
-		private fun directionDifference(left: Direction?, right: Direction?, weight: Double): WeightedDifference? {
+		private fun directionDifference(key: String, left: Direction?, right: Direction?, weight: Double): WeightedDifference? {
 			if (left == null || right == null) {
 				return null
 			}
 			val raw = abs(left.degrees - right.degrees)
 			val shortest = min(raw, 360 - raw)
 			return WeightedDifference(
+				key = key,
 				distance = shortest / 180.0,
 				weight = weight,
 				source = DifferenceSource.WEATHER,
@@ -205,6 +240,7 @@ private enum class DifferenceSource {
 }
 
 private data class WeightedDifference(
+	val key: String,
 	val distance: Double,
 	val weight: Double,
 	val source: DifferenceSource,
@@ -215,6 +251,7 @@ private fun weightedTideDifference(left: Double?, right: Double?, scale: Double,
 		return null
 	}
 	return WeightedDifference(
+		key = "tide",
 		distance = min(1.0, abs(left - right) / scale),
 		weight = weight,
 		source = DifferenceSource.TIDE,
@@ -227,6 +264,7 @@ private fun phaseDifference(left: TidePhase?, right: TidePhase?, weight: Double)
 	}
 	val distance = if (left == right) 0.0 else 1.0
 	return WeightedDifference(
+		key = "tide",
 		distance = distance,
 		weight = weight,
 		source = DifferenceSource.TIDE,

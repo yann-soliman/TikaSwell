@@ -22,6 +22,7 @@ import ovh.tika.tikaswell.domain.TideEventType
 import ovh.tika.tikaswell.domain.TidePoint
 import ovh.tika.tikaswell.domain.TideUnavailableReason
 import org.hamcrest.Matchers.containsString
+import org.hamcrest.Matchers.not
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -116,17 +117,23 @@ class HomeControllerTests {
 		mockMvc.perform(get("/v3"))
 			.andExpect(status().isOk)
 			.andExpect(content().string(containsString("href=\"/styles/app-v3.css\"")))
-			.andExpect(content().string(containsString("Salut Théo")))
+			.andExpect(content().string(containsString("TikaSwell")))
 			.andExpect(content().string(containsString("V1")))
 			.andExpect(content().string(containsString("V2")))
 			.andExpect(content().string(containsString("V3")))
-			.andExpect(content().string(containsString("GO surfer")))
+			.andExpect(content().string(containsString("Incertain")))
 			.andExpect(content().string(containsString("Conditions live")))
 			.andExpect(content().string(containsString("Pourquoi ce score ?")))
 			.andExpect(content().string(containsString("Nouvelle session")))
 			.andExpect(content().string(containsString("Statistiques")))
 			.andExpect(content().string(containsString("18,0 km/h")))
-			.andExpect(content().string(containsString("21,4 °C")))
+			.andExpect(content().string(containsString("Mer du vent")))
+			.andExpect(content().string(containsString("Score indisponible")))
+			.andExpect(content().string(containsString("Session admin")))
+			.andExpect(content().string(not(containsString("Salut Théo"))))
+			.andExpect(content().string(not(containsString("GO surfer"))))
+			.andExpect(content().string(not(containsString("21,4 °C"))))
+			.andExpect(content().string(not(containsString("Peu de data"))))
 	}
 
 	@Test
