@@ -102,12 +102,31 @@ class HomeControllerTests {
 			.andExpect(content().string(containsString("TikaSwell")))
 			.andExpect(content().string(containsString("V1")))
 			.andExpect(content().string(containsString("V2")))
+			.andExpect(content().string(containsString("V3")))
 			.andExpect(content().string(containsString("Incertain")))
 			.andExpect(content().string(containsString("Conditions en direct")))
 			.andExpect(content().string(containsString("Nouvelle session")))
 			.andExpect(content().string(containsString("Journal récent")))
 			.andExpect(content().string(containsString("18,0 km/h")))
 			.andExpect(content().string(containsString("Conditions actuelles")))
+	}
+
+	@Test
+	fun `home page renders Lovable v3 mobile dashboard with same data`() {
+		mockMvc.perform(get("/v3"))
+			.andExpect(status().isOk)
+			.andExpect(content().string(containsString("href=\"/styles/app-v3.css\"")))
+			.andExpect(content().string(containsString("Salut Théo")))
+			.andExpect(content().string(containsString("V1")))
+			.andExpect(content().string(containsString("V2")))
+			.andExpect(content().string(containsString("V3")))
+			.andExpect(content().string(containsString("GO surfer")))
+			.andExpect(content().string(containsString("Conditions live")))
+			.andExpect(content().string(containsString("Pourquoi ce score ?")))
+			.andExpect(content().string(containsString("Nouvelle session")))
+			.andExpect(content().string(containsString("Statistiques")))
+			.andExpect(content().string(containsString("18,0 km/h")))
+			.andExpect(content().string(containsString("21,4 °C")))
 	}
 
 	@Test
@@ -223,6 +242,27 @@ class HomeControllerTests {
 		)
 			.andExpect(status().is3xxRedirection)
 			.andExpect(redirectedUrl("/v2?saved=1"))
+	}
+
+	@Test
+	fun `session form preserves Lovable v3 after save`() {
+		mockMvc.perform(
+			post("/sessions")
+				.param("uiVersion", "v3")
+				.param("date", "2026-06-04")
+				.param("startTime", "09:00")
+				.param("endTime", "11:00")
+				.param("rating", "8")
+				.param("notes", "Clean morning lines"),
+		)
+			.andExpect(status().is3xxRedirection)
+			.andExpect(redirectedUrl("/v3?saved=1"))
+
+		mockMvc.perform(get("/v3").param("saved", "1"))
+			.andExpect(status().isOk)
+			.andExpect(content().string(containsString("Session enregistrée")))
+			.andExpect(content().string(containsString("Clean morning lines")))
+			.andExpect(content().string(containsString("Dernières sessions")))
 	}
 
 	@Test

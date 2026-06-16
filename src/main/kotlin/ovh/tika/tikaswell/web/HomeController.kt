@@ -81,6 +81,18 @@ class HomeController(
 		return "home-v2"
 	}
 
+	@GetMapping("/v3")
+	fun homeV3(
+		@RequestParam(name = "saved", required = false) saved: String?,
+		model: Model,
+	): String {
+		if (saved == "1") {
+			model.addAttribute("message", "Session enregistrée")
+		}
+		populateHomeModel(model, SurfSessionForm.default(), "v3")
+		return "home-v3"
+	}
+
 	@PostMapping("/sessions")
 	fun createSession(
 		@Valid @ModelAttribute("form") form: SurfSessionForm,
@@ -112,10 +124,10 @@ class HomeController(
 			),
 		)
 
-		return if (normalizedUiVersion == "v2") {
-			"redirect:/v2?saved=1"
-		} else {
-			"redirect:/?saved=1"
+		return when (normalizedUiVersion) {
+			"v2" -> "redirect:/v2?saved=1"
+			"v3" -> "redirect:/v3?saved=1"
+			else -> "redirect:/?saved=1"
 		}
 	}
 
@@ -185,10 +197,18 @@ class HomeController(
 		normalizedUiVersion().templateName()
 
 	private fun String.normalizedUiVersion(): String =
-		if (equals("v2", ignoreCase = true)) "v2" else "v1"
+		when {
+			equals("v2", ignoreCase = true) -> "v2"
+			equals("v3", ignoreCase = true) -> "v3"
+			else -> "v1"
+		}
 
 	private fun String.templateName(): String =
-		if (this == "v2") "home-v2" else "home"
+		when (this) {
+			"v2" -> "home-v2"
+			"v3" -> "home-v3"
+			else -> "home"
+		}
 }
 
 data class SurfSessionForm(
