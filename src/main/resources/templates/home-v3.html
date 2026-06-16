@@ -177,7 +177,10 @@
         <div><strong th:text="${factor.title}">Hauteur</strong><span th:text="${factor.value} + ' · ' + ${factor.label}">n/d · Non comparé</span></div>
         <i><em></em></i>
       </div>
-      <p th:text="${scoreTideNote}">La marée influence la similarité.</p>
+      <p th:text="${scoreExplanation.confidence}">Confiance expliquée.</p>
+      <p th:text="'Facteurs proches : ' + ${scoreExplanation.closeFactors}">Facteurs proches.</p>
+      <p th:text="'Facteurs éloignés : ' + ${scoreExplanation.distantFactors}">Facteurs éloignés.</p>
+      <p th:text="${scoreExplanation.tideDetails}">Détail marée.</p>
     </section>
 
     <section class="section-head" aria-labelledby="similar-title">
@@ -200,7 +203,8 @@
       </article>
     </section>
     <section class="glass-panel empty-panel" th:if="${#lists.isEmpty(scoreContributors)}">
-      <p>Logge 3 sessions de plus pour voir les empreintes proches.</p>
+      <p th:text="${scoreEmptyState.message}">Logge des sessions pour voir les empreintes proches.</p>
+      <p th:text="${scoreEmptyState.nextStep}">Ajoute des sessions notées pour démarrer le calcul.</p>
     </section>
 
     <section class="section-head" aria-labelledby="recent-title" id="journal">

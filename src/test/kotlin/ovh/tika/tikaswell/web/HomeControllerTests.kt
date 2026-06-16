@@ -99,7 +99,9 @@ class HomeControllerTests {
 			.andExpect(content().string(containsString("Mer du vent")))
 			.andExpect(content().string(containsString("Comment lire ce score ?")))
 			.andExpect(content().string(containsString("Marée absente du cache pour cette date")))
-			.andExpect(content().string(containsString("La marée est ignorée dans la similarité faute de données exploitables.")))
+			.andExpect(content().string(containsString("Historique vide")))
+			.andExpect(content().string(containsString("Objectif : au moins 3 sessions")))
+			.andExpect(content().string(containsString("Marée non utilisée")))
 			.andExpect(content().string(containsString("Ajouter une session")))
 			.andExpect(content().string(containsString("Aucune session enregistrée pour le moment.")))
 	}
@@ -164,7 +166,7 @@ class HomeControllerTests {
 			.andExpect(content().string(containsString("12:40")))
 			.andExpect(content().string(containsString("18:55")))
 			.andExpect(content().string(containsString("Saint-Nazaire · 12,4 km")))
-			.andExpect(content().string(containsString("La marée est disponible, mais ignorée faute de données historiques comparables.")))
+			.andExpect(content().string(containsString("Marée disponible")))
 	}
 
 	@Test
@@ -394,6 +396,8 @@ class HomeControllerTests {
 			.andExpect(status().isOk)
 			.andExpect(content().string(containsString("Session sans snapshot")))
 			.andExpect(content().string(containsString("Conditions météo/marine non capturées")))
+			.andExpect(content().string(containsString("Conditions historiques manquantes")))
+			.andExpect(content().string(containsString("modifie une session pour recapturer sa fenêtre")))
 	}
 
 	@Test
@@ -416,7 +420,7 @@ class HomeControllerTests {
 			.andExpect(content().string(containsString("Pleine mer")))
 			.andExpect(content().string(containsString("n/d -&gt; 12:40")))
 			.andExpect(content().string(containsString("07:20 -&gt; 18:55")))
-			.andExpect(content().string(containsString("La marée influence la similarité")))
+			.andExpect(content().string(containsString("Marée utilisée")))
 	}
 
 	private fun availableTideCache(date: LocalDate, stationName: String = "Saint-Nazaire"): TideDayCache =

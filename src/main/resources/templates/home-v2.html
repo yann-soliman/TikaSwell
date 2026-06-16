@@ -128,9 +128,10 @@
           </span>
         </div>
         <h1 th:text="${conditionsError != null} ? 'Indisponible' : 'Incertain'">Incertain</h1>
-        <p th:text="${conditionsError != null} ? 'Le fournisseur de données ne répond pas. Réessayez dans quelques minutes.' : 'Pas assez de sessions historiques similaires pour calculer un score fiable. Les conditions restent visibles.'">
+        <p th:text="${conditionsError != null} ? 'Le fournisseur de données ne répond pas. Réessayez dans quelques minutes.' : ${scoreEmptyState.message}">
           Pas assez de sessions historiques similaires pour calculer un score fiable.
         </p>
+        <p th:if="${conditionsError == null}" th:text="${scoreEmptyState.nextStep}">Ajoute des sessions notées pour démarrer le calcul.</p>
       </article>
 
       <article class="glass score-dial-card">
@@ -267,17 +268,20 @@
           <span class="eyebrow">Pondération par similarité</span>
         </div>
         <div class="factor-bars">
-          <div class="factor-v2 factor-v2--good"><div><span>Hauteur de vagues</span><em th:text="${currentConditions != null} ? ${currentConditions.waveHeight} + ' · idéal' : 'n/d'">1,2 m · idéal</em></div><i style="--level:92%"></i></div>
-          <div class="factor-v2 factor-v2--good"><div><span>Période de houle</span><em th:text="${currentConditions != null} ? ${currentConditions.wavePeriod} + ' · long' : 'n/d'">9,4 s · long</em></div><i style="--level:82%"></i></div>
-          <div class="factor-v2 factor-v2--good"><div><span>Direction de houle</span><em th:text="${currentConditions != null} ? ${currentConditions.swellWaveDirection} + ' · favorable' : 'n/d'">ONO · favorable</em></div><i style="--level:78%"></i></div>
-          <div class="factor-v2 factor-v2--warn"><div><span>Vent</span><em th:text="${currentConditions != null} ? ${currentConditions.windSpeed} + ' · à surveiller' : 'n/d'">14 km/h · à surveiller</em></div><i style="--level:55%"></i></div>
-          <div class="factor-v2"><div><span>Marée</span><em th:text="${currentTide != null and currentTide.available} ? ${currentTide.phase} + ' · modérée' : ${scoreTideNote}">Montante · modérée</em></div><i style="--level:62%"></i></div>
+          <div class="factor-v2" th:each="factor : ${v3ScoreFactors}" th:classappend="${factor.toneClass == 'factor--warn' ? 'factor-v2--warn' : (factor.toneClass == '' ? 'factor-v2--good' : '')}">
+            <div><span th:text="${factor.title}">Hauteur</span><em th:text="${factor.value} + ' · ' + ${factor.label}">n/d · Non comparé</em></div>
+            <i th:style="'--level:' + ${factor.level} + '%'"></i>
+          </div>
         </div>
         <div class="stats-v2">
           <div><strong th:text="${#lists.size(scoreContributors)}">4</strong><span>Sessions retenues</span></div>
           <div><strong th:text="${currentScore != null and currentScore.hasScore} ? ${currentScore.score} : 'n/d'">7,75</strong><span>Moyenne pondérée</span></div>
           <div><strong th:text="${currentScore != null} ? ${currentScore.confidence} : '0 %'">±0,8</strong><span>Confiance</span></div>
         </div>
+        <p class="empty-copy-v2" th:text="${scoreExplanation.confidence}">Confiance expliquée.</p>
+        <p class="empty-copy-v2" th:text="'Facteurs proches : ' + ${scoreExplanation.closeFactors}">Facteurs proches.</p>
+        <p class="empty-copy-v2" th:text="'Facteurs éloignés : ' + ${scoreExplanation.distantFactors}">Facteurs éloignés.</p>
+        <p class="empty-copy-v2" th:text="${scoreExplanation.tideDetails}">Détail marée.</p>
       </article>
 
       <article class="glass similar-v2">

@@ -211,6 +211,7 @@ class HomeController(
 	private fun populateHomeModel(model: Model, form: SurfSessionForm, uiVersion: String) {
 		val spot = spotProvider.initialSpot()
 		val sessions = surfSessionService.listForInitialSpot(spot.id)
+		val spotSnapshots = conditionSnapshotRepository.findBySpotId(spot.id)
 		val currentConditions = runCatching { conditionsProvider.fetchCurrentConditions(spot) }
 		val currentScore = currentConditions.getOrNull()?.let { surfScoreService.score(it) }
 		val currentTide = currentConditions.getOrNull()?.snapshot?.timestamp?.let { timestamp ->
@@ -235,11 +236,14 @@ class HomeController(
 		model.addAttribute("conditionsError", currentConditions.exceptionOrNull()?.message)
 		model.addAttribute("currentTide", currentTide)
 		val scoreContributors = scoreContributors(currentScore, sessions)
+		val emptyScoreState = ScoreEmptyStateView.from(sessions, spotSnapshots)
 		model.addAttribute("currentScore", currentScore?.let(CurrentScoreView::from))
 		model.addAttribute("scoreContributors", scoreContributors)
 		model.addAttribute("scoreTideNote", scoreTideNote(currentScore, currentTide))
+		model.addAttribute("scoreEmptyState", emptyScoreState)
+		model.addAttribute("scoreExplanation", ScoreExplanationView.from(currentScore, currentTide))
 		model.addAttribute("sessionStats", SessionStatsView.from(sessions))
-		model.addAttribute("v3Verdict", V3VerdictView.from(currentScore?.let(CurrentScoreView::from), scoreContributors.size, currentConditions.isFailure))
+		model.addAttribute("v3Verdict", V3VerdictView.from(currentScore?.let(CurrentScoreView::from), scoreContributors.size, currentConditions.isFailure, emptyScoreState.message))
 		model.addAttribute("v3ScoreFactors", v3ScoreFactors(currentScore, currentConditions.getOrNull()?.snapshot, currentTide))
 		model.addAttribute("uiVersion", uiVersion)
 	}
@@ -715,7 +719,7 @@ data class V3VerdictView(
 	val referenceLabel: String,
 ) {
 	companion object {
-		fun from(score: CurrentScoreView?, contributorCount: Int, hasProviderError: Boolean): V3VerdictView {
+		fun from(score: CurrentScoreView?, contributorCount: Int, hasProviderError: Boolean, emptyScoreMessage: String): V3VerdictView {
 			if (hasProviderError) {
 				return V3VerdictView(
 					title = "Indisponible",
@@ -732,7 +736,7 @@ data class V3VerdictView(
 			if (score == null || !score.hasScore) {
 				return V3VerdictView(
 					title = "Incertain",
-					summary = "Pas encore assez de sessions historiques similaires pour estimer le spot.",
+					summary = emptyScoreMessage,
 					score = "n/d",
 					scorePercent = 0,
 					confidence = score?.confidence ?: "0 %",
@@ -755,6 +759,92 @@ data class V3VerdictView(
 				referenceLabel = "$contributorCount session(s)",
 			)
 		}
+	}
+}
+
+data class ScoreEmptyStateView(
+	val title: String,
+	val message: String,
+	val nextStep: String,
+) {
+	companion object {
+		fun from(sessions: List<SurfSession>, snapshots: List<SessionConditionSnapshot>): ScoreEmptyStateView =
+			when {
+				sessions.isEmpty() -> ScoreEmptyStateView(
+					title = "Historique vide",
+					message = "Ajoute quelques sessions notées pour que TikaSwell puisse comparer les conditions du moment.",
+					nextStep = "Objectif : au moins 3 sessions avec des notes et des conditions capturées.",
+				)
+				snapshots.isEmpty() -> ScoreEmptyStateView(
+					title = "Conditions historiques manquantes",
+					message = "Des sessions existent, mais aucune condition météo/marine n'est encore associée à ces sessions.",
+					nextStep = "Laisse le backfill récupérer les conditions ou modifie une session pour recapturer sa fenêtre.",
+				)
+				else -> ScoreEmptyStateView(
+					title = "Pas assez de proximité",
+					message = "Les sessions enregistrées ne ressemblent pas assez aux conditions actuelles pour produire un score utile.",
+					nextStep = "Continue à logger des sessions variées pour couvrir plus de configurations du spot.",
+				)
+			}
+	}
+}
+
+data class ScoreExplanationView(
+	val confidence: String,
+	val closeFactors: String,
+	val distantFactors: String,
+	val tideDetails: String,
+) {
+	companion object {
+		fun from(score: CurrentScore?, currentTide: TideContextView?): ScoreExplanationView {
+			if (score == null || score.score == null) {
+				return ScoreExplanationView(
+					confidence = "La confiance reste à 0 % tant qu'aucune session comparable n'entre dans le calcul.",
+					closeFactors = "Aucun facteur comparable pour le moment.",
+					distantFactors = "Aucun écart exploitable pour le moment.",
+					tideDetails = currentTide.tideDetails(score),
+				)
+			}
+
+			val factors = score.factors.sortedByDescending { it.weight }
+			return ScoreExplanationView(
+				confidence = "Confiance ${score.confidence.format(0)} % : ${score.contributors.size} session(s) proche(s), pondérées par leur similarité.",
+				closeFactors = factors
+					.filter { it.similarity >= 0.7 }
+					.joinToString(", ") { it.label() }
+					.ifBlank { "Aucun facteur très proche." },
+				distantFactors = factors
+					.filter { it.similarity < 0.7 }
+					.joinToString(", ") { it.label() }
+					.ifBlank { "Aucun facteur très éloigné parmi les variables utilisées." },
+				tideDetails = currentTide.tideDetails(score),
+			)
+		}
+
+		private fun ScoreFactor.label(): String =
+			"${key.factorLabel()} ${(similarity * 100).format(0)} %"
+
+		private fun String.factorLabel(): String =
+			when (this) {
+				"wind" -> "vent"
+				"waveHeight" -> "hauteur"
+				"wavePeriod" -> "période"
+				"waveDirection" -> "direction"
+				"tide" -> "marée"
+				else -> this
+			}
+
+		private fun TideContextView?.tideDetails(score: CurrentScore?): String =
+			when {
+				score?.tideUsed == true && this?.available == true ->
+					"Marée utilisée : hauteur ${waterHeight}, phase ${phase}, pleine mer ${previousHighTide} -> ${nextHighTide}, basse mer ${previousLowTide} -> ${nextLowTide}."
+				score?.tideUsed == true ->
+					"Marée utilisée dans certains rapprochements historiques, mais le contexte actuel est incomplet."
+				this?.available == true ->
+					"Marée disponible (${waterHeight}, ${phase}), mais pas encore comparable avec assez de sessions historiques."
+				else ->
+					"Marée non utilisée : données absentes ou non comparables."
+			}
 	}
 }
 

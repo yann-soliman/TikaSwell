@@ -115,8 +115,9 @@
           <div th:if="${conditionsError == null and (currentScore == null or !currentScore.hasScore)}" class="state-card">
             <span aria-hidden="true"></span>
             <div>
-              <strong>Score indisponible</strong>
-              <p>Pas encore assez de sessions historiques similaires pour estimer le spot.</p>
+              <strong th:text="${scoreEmptyState.title}">Score indisponible</strong>
+              <p th:text="${scoreEmptyState.message}">Pas encore assez de sessions historiques similaires pour estimer le spot.</p>
+              <p th:text="${scoreEmptyState.nextStep}">Ajoute des sessions notées pour démarrer le calcul.</p>
             </div>
           </div>
         </div>
@@ -198,30 +199,10 @@
         </div>
         <div class="panel-body explanation-layout">
           <div class="factor-list">
-            <div class="factor-row factor-row--good">
-              <strong>Hauteur de vagues</strong>
-              <span><i style="width: 86%"></i></span>
-              <em>Très favorable</em>
-            </div>
-            <div class="factor-row factor-row--good">
-              <strong>Période</strong>
-              <span><i style="width: 74%"></i></span>
-              <em>Favorable</em>
-            </div>
-            <div class="factor-row factor-row--good">
-              <strong>Direction de houle</strong>
-              <span><i style="width: 68%"></i></span>
-              <em>Comparée aux bonnes sessions</em>
-            </div>
-            <div class="factor-row factor-row--warn">
-              <strong>Vent</strong>
-              <span><i style="width: 52%"></i></span>
-              <em>À surveiller</em>
-            </div>
-            <div class="factor-row">
-              <strong>Marée</strong>
-              <span><i style="width: 46%"></i></span>
-              <em th:text="${scoreTideNote}">Influence selon données disponibles</em>
+            <div class="factor-row" th:each="factor : ${v3ScoreFactors}" th:classappend="${factor.toneClass == 'factor--warn' ? 'factor-row--warn' : (factor.toneClass == '' ? 'factor-row--good' : '')}">
+              <strong th:text="${factor.title}">Hauteur</strong>
+              <span><i th:style="'width: ' + ${factor.level} + '%'"></i></span>
+              <em th:text="${factor.value} + ' · ' + ${factor.label}">n/d · Non comparé</em>
             </div>
           </div>
           <div class="explanation-copy">
@@ -232,7 +213,10 @@
             <ul>
               <li th:text="'· ' + ${#lists.size(scoreContributors)} + ' sessions similaires retenues'">· 4 sessions similaires retenues</li>
               <li th:if="${currentScore != null and currentScore.hasScore}" th:text="'· Note moyenne pondérée : ' + ${currentScore.score} + ' / 10'">· Note moyenne pondérée : 7,75 / 10</li>
-              <li th:text="'· ' + ${scoreTideNote}">· La marée est ignorée dans la similarité faute de données exploitables.</li>
+              <li th:text="'· ' + ${scoreExplanation.confidence}">· Confiance expliquée.</li>
+              <li th:text="'· Facteurs proches : ' + ${scoreExplanation.closeFactors}">· Facteurs proches</li>
+              <li th:text="'· Facteurs éloignés : ' + ${scoreExplanation.distantFactors}">· Facteurs éloignés</li>
+              <li th:text="'· ' + ${scoreExplanation.tideDetails}">· Détail marée.</li>
             </ul>
           </div>
         </div>
