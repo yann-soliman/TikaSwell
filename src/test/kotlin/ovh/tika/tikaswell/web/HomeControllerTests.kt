@@ -76,6 +76,14 @@ class HomeControllerTests {
 	}
 
 	@Test
+	fun `health endpoint reports application and database status`() {
+		mockMvc.perform(get("/health"))
+			.andExpect(status().isOk)
+			.andExpect(content().string(containsString("\"status\":\"UP\"")))
+			.andExpect(content().string(containsString("\"database\":\"UP\"")))
+	}
+
+	@Test
 	fun `home page renders configured spot and empty session history`() {
 		mockMvc.perform(get("/"))
 			.andExpect(status().isOk)
